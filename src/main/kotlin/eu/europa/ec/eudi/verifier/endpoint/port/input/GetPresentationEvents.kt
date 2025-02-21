@@ -156,7 +156,7 @@ private fun JsonObjectBuilder.putEventNameAndActor(e: PresentationEvent) {
 
 private fun WalletResponseValidationError.asText(): String =
     when (this) {
-        WalletResponseValidationError.IncorrectState -> "Incorrect state"
+        WalletResponseValidationError.IncorrectStateInJarm -> "Incorrect state in JARM"
         WalletResponseValidationError.MissingIdToken -> "Missing id_token"
         WalletResponseValidationError.MissingState -> "Missing state from JARM"
         WalletResponseValidationError.MissingVpToken -> "Missing vp_token"
@@ -168,7 +168,6 @@ private fun WalletResponseValidationError.asText(): String =
         is WalletResponseValidationError.UnexpectedResponseMode -> "Unexpected response mode. Expected $expected, actual $actual"
         WalletResponseValidationError.RequiredCredentialSetNotSatisfied ->
             "vp_token does not satisfy all the required credential sets of the query"
-        WalletResponseValidationError.InvalidPresentationSubmission -> "Presentation submission is not valid"
     }
 
 private inline fun <reified A> A.json() = Json.encodeToJsonElement(this)
