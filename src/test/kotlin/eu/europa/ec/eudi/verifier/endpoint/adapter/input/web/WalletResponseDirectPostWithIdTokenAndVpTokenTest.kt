@@ -78,7 +78,7 @@ internal class WalletResponseDirectPostWithIdTokenAndVpTokenTest {
         formEncodedBody.add("presentation_submission", TestUtils.loadResource("02-presentationSubmission.json"))
 
         // when
-        WalletApiClient.directPost(client, requestId, formEncodedBody)
+        WalletApiClient.directPost(client, formEncodedBody)
 
         // then
         assertNotNull(presentationId)
@@ -94,7 +94,7 @@ internal class WalletResponseDirectPostWithIdTokenAndVpTokenTest {
     @Test
     @Order(value = 2)
     fun `get authorisation response - confirm returns 200`() = runTest {
-        suspend fun test(
+        fun test(
             presentationDefinition: String,
             presentationSubmission: String,
             vpToken: String,
@@ -114,7 +114,7 @@ internal class WalletResponseDirectPostWithIdTokenAndVpTokenTest {
             formEncodedBody.add("vp_token", TestUtils.loadResource(vpToken))
             formEncodedBody.add("presentation_submission", TestUtils.loadResource(presentationSubmission))
 
-            WalletApiClient.directPost(client, requestId, formEncodedBody)
+            WalletApiClient.directPost(client, formEncodedBody)
 
             // when
             val response = VerifierApiClient.getWalletResponse(client, presentationId)
@@ -157,11 +157,12 @@ internal class WalletResponseDirectPostWithIdTokenAndVpTokenTest {
         // The response will be rejected before JARM parsing/verification takes place
         val formEncodedBody: MultiValueMap<String, Any> = LinkedMultiValueMap()
         formEncodedBody.add("response", "response")
+        formEncodedBody.add("state", requestId.value)
 
         // send the wallet response
         // we expect the response submission to fail
         try {
-            WalletApiClient.directPostJwt(client, requestId, formEncodedBody)
+            WalletApiClient.directPostJwt(client, formEncodedBody)
             fail("Expected direct_post.jwt submission to fail for direct_post Presentation")
         } catch (error: AssertionError) {
             assertEquals("Status expected:<200 OK> but was:<400 BAD_REQUEST>", error.message)
@@ -182,7 +183,7 @@ internal class WalletResponseDirectPostWithIdTokenAndVpTokenTest {
         formEncodedBody.add("id_token", "value 1")
         formEncodedBody.add("vp_token", TestUtils.loadResource("04-vpToken.json"))
 
-        WalletApiClient.directPost(client, requestId, formEncodedBody)
+        WalletApiClient.directPost(client, formEncodedBody)
 
         val response = assertNotNull(VerifierApiClient.getWalletResponse(client, presentationId))
 
@@ -206,7 +207,7 @@ internal class WalletResponseDirectPostWithIdTokenAndVpTokenTest {
         formEncodedBody.add("vp_token", TestUtils.loadResource("04-vpToken.json"))
 
         try {
-            WalletApiClient.directPost(client, requestId, formEncodedBody)
+            WalletApiClient.directPost(client, formEncodedBody)
             fail("Expected DCQL response to be rejected for Presentation Exchange query")
         } catch (error: AssertionError) {
             assertEquals("Status expected:<200 OK> but was:<400 BAD_REQUEST>", error.message)
@@ -228,7 +229,7 @@ internal class WalletResponseDirectPostWithIdTokenAndVpTokenTest {
         formEncodedBody.add("presentation_submission", TestUtils.loadResource("03-presentationSubmission.json"))
 
         try {
-            WalletApiClient.directPost(client, requestId, formEncodedBody)
+            WalletApiClient.directPost(client, formEncodedBody)
             fail("Expected Presentation Exchange response to be rejected for DCQL query")
         } catch (error: AssertionError) {
             assertEquals("Status expected:<200 OK> but was:<400 BAD_REQUEST>", error.message)
@@ -249,7 +250,7 @@ internal class WalletResponseDirectPostWithIdTokenAndVpTokenTest {
         formEncodedBody.add("vp_token", TestUtils.loadResource("04-vpToken.json"))
 
         try {
-            WalletApiClient.directPost(client, requestId, formEncodedBody)
+            WalletApiClient.directPost(client, formEncodedBody)
             fail("Expected Presentation Exchange response to be rejected for DCQL query")
         } catch (error: AssertionError) {
             assertEquals("Status expected:<200 OK> but was:<400 BAD_REQUEST>", error.message)
@@ -270,7 +271,7 @@ internal class WalletResponseDirectPostWithIdTokenAndVpTokenTest {
         formEncodedBody.add("id_token", "value 1")
         formEncodedBody.add("vp_token", TestUtils.loadResource("05-vpToken.json"))
 
-        WalletApiClient.directPost(client, requestId, formEncodedBody)
+        WalletApiClient.directPost(client, formEncodedBody)
 
         val response = assertNotNull(VerifierApiClient.getWalletResponse(client, presentationId))
 
