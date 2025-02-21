@@ -84,7 +84,7 @@ internal class WalletResponseDirectPostWithIdTokenTest {
         formEncodedBody.add("id_token", "value 1")
 
         // when
-        WalletApiClient.directPost(client, formEncodedBody)
+        WalletApiClient.directPost(client, requestId, formEncodedBody)
     }
 
     /**
@@ -108,7 +108,7 @@ internal class WalletResponseDirectPostWithIdTokenTest {
         formEncodedBody.add("state", requestId.value)
         formEncodedBody.add("id_token", "value 1")
 
-        WalletApiClient.directPost(client, formEncodedBody)
+        WalletApiClient.directPost(client, requestId, formEncodedBody)
 
         // when
         val response = VerifierApiClient.getWalletResponse(
@@ -127,6 +127,7 @@ internal class WalletResponseDirectPostWithIdTokenTest {
             PresentationTypeTO.IdTokenRequest,
             IdTokenTypeTO.SubjectSigned,
             null,
+            null,
             "nonce",
             redirectUriTemplate =
                 "https://client.example.org/cb#response_code=${CreateQueryWalletResponseRedirectUri.RESPONSE_CODE_PLACE_HOLDER}",
@@ -142,6 +143,7 @@ internal class WalletResponseDirectPostWithIdTokenTest {
 
         WalletApiClient.directPost(
             client,
+            requestId,
             formEncodedBody,
             { responseSpec ->
                 val returnResult = responseSpec
@@ -170,7 +172,7 @@ internal class WalletResponseDirectPostWithIdTokenTest {
         formEncodedBody.add("state", requestId.value)
         formEncodedBody.add("id_token", "value 1")
 
-        WalletApiClient.directPost(client, formEncodedBody)
+        WalletApiClient.directPost(client, requestId, formEncodedBody)
 
         // when
         val returnResult = VerifierApiClient.getWalletResponseNoValidation(
@@ -191,6 +193,7 @@ internal class WalletResponseDirectPostWithIdTokenTest {
             PresentationTypeTO.IdTokenRequest,
             IdTokenTypeTO.SubjectSigned,
             null,
+            null,
             "nonce",
             redirectUriTemplate =
                 "https://client.example.org/cb#response_code=${CreateQueryWalletResponseRedirectUri.RESPONSE_CODE_PLACE_HOLDER}",
@@ -204,7 +207,7 @@ internal class WalletResponseDirectPostWithIdTokenTest {
         formEncodedBody.add("state", requestId.value)
         formEncodedBody.add("id_token", "value 1")
 
-        WalletApiClient.directPost(client, formEncodedBody)
+        WalletApiClient.directPost(client, requestId, formEncodedBody)
 
         // when
         val returnResult = VerifierApiClient.getWalletResponseNoValidation(
@@ -224,6 +227,7 @@ internal class WalletResponseDirectPostWithIdTokenTest {
             PresentationTypeTO.IdTokenRequest,
             IdTokenTypeTO.SubjectSigned,
             null,
+            null,
             "nonce",
             redirectUriTemplate =
                 "https://client.example.org/cb#response_code=${CreateQueryWalletResponseRedirectUri.RESPONSE_CODE_PLACE_HOLDER}",
@@ -240,6 +244,7 @@ internal class WalletResponseDirectPostWithIdTokenTest {
         var responseCode: String? = null
         WalletApiClient.directPost(
             client,
+            requestId,
             formEncodedBody,
             { responseSpec ->
                 val returnResult = responseSpec
