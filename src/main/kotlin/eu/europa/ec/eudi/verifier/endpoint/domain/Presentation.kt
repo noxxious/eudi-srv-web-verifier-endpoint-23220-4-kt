@@ -57,6 +57,34 @@ enum class IdTokenType {
 }
 
 /**
+ * The requirements of the Verifiable Presentations to be presented.
+ */
+sealed interface PresentationQuery {
+
+    /**
+     * The requirements of the Verifiable Presentations to be presented, expressed using Presentation Definition.
+     */
+    data class ByPresentationDefinition(val presentationDefinition: PresentationDefinition) : PresentationQuery
+
+    /**
+     * The requirements of the Verifiable Presentations to be presented, expressed using DCQL.
+     */
+    data class ByDigitalCredentialsQueryLanguage(val query: DCQL) : PresentationQuery
+}
+
+val PresentationQuery.presentationDefinitionOrNull: PresentationDefinition?
+    get() = when (this) {
+        is PresentationQuery.ByPresentationDefinition -> presentationDefinition
+        is PresentationQuery.ByDigitalCredentialsQueryLanguage -> null
+    }
+
+val PresentationQuery.dcqlQueryOrNull: DCQL?
+    get() = when (this) {
+        is PresentationQuery.ByPresentationDefinition -> null
+        is PresentationQuery.ByDigitalCredentialsQueryLanguage -> query
+    }
+
+/**
  * Represents what the [Presentation] is asking
  * from the wallet
  */
@@ -66,38 +94,83 @@ sealed interface PresentationType {
     ) : PresentationType
 
     data class VpTokenRequest(
-        val presentationDefinition: PresentationDefinition,
+        val presentationQuery: PresentationQuery,
     ) : PresentationType
 
     data class IdAndVpToken(
         val idTokenType: List<IdTokenType>,
-        val presentationDefinition: PresentationDefinition,
+        val presentationQuery: PresentationQuery,
     ) : PresentationType
 }
 
 val PresentationType.presentationDefinitionOrNull: PresentationDefinition?
     get() = when (this) {
         is PresentationType.IdTokenRequest -> null
-        is PresentationType.VpTokenRequest -> presentationDefinition
-        is PresentationType.IdAndVpToken -> presentationDefinition
+        is PresentationType.VpTokenRequest -> presentationQuery.presentationDefinitionOrNull
+        is PresentationType.IdAndVpToken -> presentationQuery.presentationDefinitionOrNull
+    }
+
+val PresentationType.dcqlQueryOrNull: DCQL?
+    get() = when (this) {
+        is PresentationType.IdTokenRequest -> null
+        is PresentationType.VpTokenRequest -> presentationQuery.dcqlQueryOrNull
+        is PresentationType.IdAndVpToken -> presentationQuery.dcqlQueryOrNull
     }
 
 sealed interface VerifiablePresentation {
+    val format: Format
 
-    @JvmInline
-    value class Generic(val value: String) : VerifiablePresentation {
+    data class Str(val value: String, override val format: Format) : VerifiablePresentation {
         init {
             require(value.isNotBlank()) { "VpToken cannot be blank" }
         }
     }
 
-    @JvmInline
-    value class Json(val value: JsonObject) : VerifiablePresentation {
+    data class Json(val value: JsonObject, override val format: Format) : VerifiablePresentation {
         init {
             require(value.isNotEmpty()) { "VpToken must contain claims" }
         }
     }
 }
+
+/**
+ * The Wallet's response to a 'vp_token' request.
+ */
+sealed interface VpContent {
+
+    /**
+     * A 'vp_token' response as defined by Presentation Exchange.
+     */
+    data class PresentationExchange(
+        val verifiablePresentations: NonEmptyList<VerifiablePresentation>,
+        val presentationSubmission: PresentationSubmission,
+    ) : VpContent {
+        init {
+            require(verifiablePresentations.size == verifiablePresentations.distinct().size)
+        }
+    }
+
+    /**
+     * A 'vp_token' response as defined by DCQL.
+     */
+    data class DCQL(val verifiablePresentations: Map<QueryId, VerifiablePresentation>) : VpContent {
+        init {
+            require(verifiablePresentations.isNotEmpty())
+        }
+    }
+}
+
+internal fun VpContent.verifiablePresentations(): List<VerifiablePresentation> =
+    when (this) {
+        is VpContent.PresentationExchange -> verifiablePresentations
+        is VpContent.DCQL -> verifiablePresentations.values.distinct()
+    }
+
+internal fun VpContent.presentationSubmissionOrNull(): PresentationSubmission? =
+    when (this) {
+        is VpContent.PresentationExchange -> presentationSubmission
+        is VpContent.DCQL -> null
+    }
 
 sealed interface WalletResponse {
 
@@ -110,14 +183,12 @@ sealed interface WalletResponse {
     }
 
     data class VpToken(
-        val vpToken: NonEmptyList<VerifiablePresentation>,
-        val presentationSubmission: PresentationSubmission,
+        val vpContent: VpContent,
     ) : WalletResponse
 
     data class IdAndVpToken(
         val idToken: Jwt,
-        val vpToken: NonEmptyList<VerifiablePresentation>,
-        val presentationSubmission: PresentationSubmission,
+        val vpContent: VpContent,
     ) : WalletResponse {
         init {
             require(idToken.isNotEmpty())
