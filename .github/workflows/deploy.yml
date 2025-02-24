@@ -95,6 +95,19 @@ jobs:
             VERIFIER_PUBLICURL=${{ vars.VERIFIER_PUBLIC_URL }}
             VERIFIER_RESPONSE_MODE=${{ env.VERIFIER_RESPONSE_MODE }}
 
+      - name: Discord notification
+        uses: sarisia/actions-status-discord@v1
+        if: always()
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: ${{ job.status }}
+          content: "Deployment status"
+          title: "deploy"
+          description: "Issuer deployment complete"
+          color: 0x0000ff
+          url: "https://github.com/noxxious/eudi-srv-web-verifier-endpoint-23220-4-kt"
+          username: GitHub Actions
+      
       # If required, use the Cloud Run url output in later steps
       - name: Show Output
         run: echo ${{ steps.deploy.outputs.url }}
