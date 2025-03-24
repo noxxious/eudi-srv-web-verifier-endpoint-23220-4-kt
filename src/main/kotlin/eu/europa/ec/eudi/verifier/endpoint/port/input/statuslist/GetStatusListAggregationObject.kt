@@ -42,7 +42,6 @@ class GetStatusListAggregationObjectLive(
         }
     }
 
-
     private fun invalidState(): InvalidState {
         fun log() {
             logger.info("Getting status list aggregation, invalid state")
