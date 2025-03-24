@@ -94,6 +94,7 @@ jobs:
           env_vars: |-
             VERIFIER_PUBLICURL=${{ vars.VERIFIER_PUBLIC_URL }}
             VERIFIER_RESPONSE_MODE=${{ env.VERIFIER_RESPONSE_MODE }}
+            STATUSLIST_PUBLICURL=${{ vars.STATUS_LIST_PUBLIC_URL }}
 
       - name: Discord notification
         uses: sarisia/actions-status-discord@v1

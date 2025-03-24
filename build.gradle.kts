@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.ktor.client.java) {
         because("ktor client engine to use (required by SdJwtVcVerifier)")
     }
+    implementation("com.google.code.gson:gson:2.12.1")
 
     testImplementation(kotlin("test"))
     testImplementation(libs.kotlinx.coroutines.test)

@@ -9,6 +9,7 @@ services:
     environment:
       VERIFIER_PUBLICURL: "https://10.240.174.10"
       VERIFIER_RESPONSE_MODE: "DirectPost"
+      STATUS_LIST_PUBLICURL: "http://localhost:8085"
 
   verifier-ui:
     image: ghcr.io/eu-digital-identity-wallet/eudi-web-verifier:latest

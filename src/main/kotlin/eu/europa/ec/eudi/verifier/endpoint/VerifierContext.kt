@@ -19,6 +19,7 @@ import arrow.core.NonEmptyList
 import arrow.core.recover
 import arrow.core.some
 import arrow.core.toNonEmptyListOrNull
+import com.google.gson.Gson
 import com.nimbusds.jose.EncryptionMethod
 import com.nimbusds.jose.JWEAlgorithm
 import com.nimbusds.jose.JWSAlgorithm
@@ -39,8 +40,12 @@ import eu.europa.ec.eudi.verifier.endpoint.adapter.out.jose.VerifyJarmEncryptedJ
 import eu.europa.ec.eudi.verifier.endpoint.adapter.out.persistence.PresentationInMemoryRepo
 import eu.europa.ec.eudi.verifier.endpoint.domain.*
 import eu.europa.ec.eudi.verifier.endpoint.port.input.*
+import eu.europa.ec.eudi.verifier.endpoint.port.input.statuslist.GetStatusListAggregationObjectLive
+import eu.europa.ec.eudi.verifier.endpoint.port.input.statuslist.GetStatusListObjectLive
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.CreateQueryWalletResponseRedirectUri
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.GenerateResponseCode
+import eu.europa.ec.eudi.verifier.endpoint.port.out.web.GetStatusListAggregationClient
+import eu.europa.ec.eudi.verifier.endpoint.port.out.web.GetStatusListClient
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
@@ -56,6 +61,7 @@ import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.config.web.server.invoke
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.reactive.CorsConfigurationSource
+import org.springframework.web.reactive.function.client.WebClient
 import java.security.KeyStore
 import java.security.cert.X509Certificate
 import java.time.Clock
@@ -108,6 +114,12 @@ internal fun beans(clock: Clock) = beans {
         bean { deletePresentationsInitiatedBefore }
     }
 
+    bean {
+        WebClient.builder()
+            .baseUrl(env.statusListPublicUrl())
+            .build()
+    }
+
     bean { CreateQueryWalletResponseRedirectUri.Simple }
 
     //
@@ -130,6 +142,10 @@ internal fun beans(clock: Clock) = beans {
     }
 
     bean { GetRequestObjectLive(ref(), ref(), ref(), ref(), clock, ref()) }
+    bean { GetStatusListObjectLive(ref()) }
+    bean { GetStatusListAggregationObjectLive(ref()) }
+    bean { GetStatusListClient(ref(), ref()) }
+    bean { GetStatusListAggregationClient(ref(), ref()) }
 
     bean { GetPresentationDefinitionLive(clock, ref(), ref()) }
     bean {
@@ -168,6 +184,8 @@ internal fun beans(clock: Clock) = beans {
     //
     bean { verifierConfig(env, clock) }
 
+    bean { Gson() }
+
     //
     // End points
     //
@@ -181,6 +199,7 @@ internal fun beans(clock: Clock) = beans {
             ref<VerifierConfig>().verifierId.jarSigning.key,
         )
         val verifierApi = VerifierApi(ref(), ref(), ref())
+        val statusListApi = StatusListApi(ref(), ref(), ref())
         val staticContent = StaticContent()
         val swaggerUi = SwaggerUi(
             publicResourcesBasePath = env.getRequiredProperty("spring.webflux.static-path-pattern").removeSuffix("/**"),
@@ -190,6 +209,7 @@ internal fun beans(clock: Clock) = beans {
         val utilityApi = UtilityApi(ref(), ref())
         walletApi.route
             .and(verifierApi.route)
+            .and(statusListApi.route)
             .and(staticContent.route)
             .and(swaggerUi.route)
             .and(utilityApi.route)
@@ -401,6 +421,7 @@ private fun Environment.clientMetaData(publicUrl: String): ClientMetaData {
  * Gets the public URL of the Verifier endpoint. Corresponds to `verifier.publicUrl` property.
  */
 private fun Environment.publicUrl(): String = getProperty("verifier.publicUrl", "http://localhost:8080")
+private fun Environment.statusListPublicUrl(): String = getProperty("statusList.publicUrl", "http://localhost:8085")
 
 /**
  * Creates a copy of this [JWK] and sets the provided [X509Certificate] certificate chain.
