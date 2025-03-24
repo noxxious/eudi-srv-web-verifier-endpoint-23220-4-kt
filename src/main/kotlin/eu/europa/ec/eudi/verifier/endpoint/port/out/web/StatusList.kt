@@ -101,7 +101,6 @@ class StatusList(size: Int, bits: Int, defaultValue: Byte? = null, list: ByteArr
     }
 
     fun set(index: Int, value: Byte) {
-
         require(index in 0 until size) { "index is not a valid value" }
         require(value or mask == mask) { "value is exceeding the bits of this status list" }
 

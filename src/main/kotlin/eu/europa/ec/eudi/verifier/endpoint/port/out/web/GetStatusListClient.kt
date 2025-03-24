@@ -75,7 +75,7 @@ class GetStatusListClient(
     override suspend operator fun invoke(id: String): ClientResponse<StatusListWithBits> {
         val statusList = statusListWebClient
             .get()
-            .uri("/${id}")
+            .uri("/$id")
             .retrieve()
             .awaitBody<ByteArray>()
 
@@ -85,10 +85,10 @@ class GetStatusListClient(
 
         val statusListJwtHeader = toStatusListJWTHeader(statusListJwt)
         val statusListJwtPayload = toStatusListJWTPayload(statusListJwt)
-        logger.info("statusListJwtHeader: ${statusListJwtHeader}, statusListJwtPayload: ${statusListJwtPayload}")
+        logger.info("statusListJwtHeader: $statusListJwtHeader, statusListJwtPayload: $statusListJwtPayload")
 
         val statusListWithBits = toStatusListWithBits(statusListJwtPayload)
-        logger.info("statusListWithBits: ${statusListWithBits}")
+        logger.info("statusListWithBits: $statusListWithBits")
 
         return when (statusListWithBits.totalStatuses > 0) {
             true -> ClientResponse.Found(statusListWithBits)
@@ -120,7 +120,6 @@ class GetStatusListClient(
     }
 
     private fun toStatusListWithBits(statusListJWTPayload: StatusListJWTPayload): StatusListWithBits {
-
         val statusListDecoded = StatusList.fromEncoded(statusListJWTPayload.status_list.bits, statusListJWTPayload.status_list.lst)
         logger.info("statusListDecoded: $statusListDecoded")
 
