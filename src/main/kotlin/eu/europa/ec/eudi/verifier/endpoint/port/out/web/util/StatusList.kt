@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package eu.europa.ec.eudi.verifier.endpoint.port.out.web
+package eu.europa.ec.eudi.verifier.endpoint.port.out.web.util
 
 import com.nimbusds.jose.util.Base64URL
 import com.upokecenter.cbor.CBORObject
+import java.lang.Integer.parseInt
+import java.lang.Math.floor
 import java.util.zip.Deflater
 import java.util.zip.DeflaterInputStream
 import java.util.zip.InflaterInputStream
@@ -25,7 +27,6 @@ import kotlin.experimental.inv
 import kotlin.experimental.or
 
 /**
- * Source copy of de.bdr.openid4vc.statuslist.StatusList
  * Construct a new status list.
  *
  * @param size number of entities in the bit array
@@ -81,13 +82,15 @@ class StatusList(size: Int, bits: Int, defaultValue: Byte? = null, list: ByteArr
          * @param bits number of bits per entry
          * @param encodedList the base64url encoded, compressed status list
          */
+        @OptIn(ExperimentalUnsignedTypes::class)
         fun fromEncoded(bits: Int, encodedList: String): StatusList {
             val compressed = Base64URL.from(encodedList).decode()
-            // TODO: error handling
 
             val byteArray = InflaterInputStream(compressed.inputStream()).use { it.readBytes() }
 
-            return StatusList(byteArray.size * (8 / bits), bits, list = byteArray)
+            val statusListOrdered = orderStatusListBytes(byteArray.toUByteArray(), bits)
+
+            return StatusList(statusListOrdered.size * (8 / bits), bits, list = statusListOrdered)
         }
 
         fun fromCbor(sl: CBORObject): StatusList {
@@ -97,6 +100,28 @@ class StatusList(size: Int, bits: Int, defaultValue: Byte? = null, list: ByteArr
                     it.readBytes()
                 }
             return StatusList(byteArray.size * (8 / bits), bits, list = byteArray)
+        }
+
+        @OptIn(ExperimentalUnsignedTypes::class)
+        fun orderStatusListBytes(byteArray: UByteArray, bitsPerStatus: Int): ByteArray {
+            val numBits = bitsPerStatus
+            val totalStatuses = (byteArray.size * 8) / numBits
+            val statusList = ByteArray(totalStatuses)
+            var bitIndex = 0
+            for (i in 0..<totalStatuses) {
+                val byte = byteArray[floor(((i * numBits) / 8).toDouble()).toInt()]
+                var byteString = byte.toString(radix = 2)
+                if (byteString.length < 8) {
+                    byteString = "0".repeat(8 - byteString.length) + byteString
+                }
+                val status = byteString.slice(bitIndex until bitIndex + numBits)
+                val group = floor((i / (8 / numBits)).toDouble())
+                val indexInGroup = i % (8 / numBits)
+                val position = (group * (8 / numBits)).toInt() + (8 / numBits + -1 - indexInGroup)
+                statusList[position] = parseInt(status, 2).toByte()
+                bitIndex = (bitIndex + numBits) % 8
+            }
+            return statusList
         }
     }
 

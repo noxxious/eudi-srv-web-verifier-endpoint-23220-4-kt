@@ -55,6 +55,7 @@ dependencies {
         because("ktor client engine to use (required by SdJwtVcVerifier)")
     }
     implementation("com.google.code.gson:gson:2.12.1")
+    implementation("com.nimbusds:nimbus-jose-jwt:9.48")
 
     testImplementation(kotlin("test"))
     testImplementation(libs.kotlinx.coroutines.test)

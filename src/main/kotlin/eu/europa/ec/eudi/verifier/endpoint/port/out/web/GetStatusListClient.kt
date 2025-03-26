@@ -16,6 +16,8 @@
 package eu.europa.ec.eudi.verifier.endpoint.port.out.web
 
 import com.google.gson.Gson
+import com.nimbusds.jwt.SignedJWT
+import eu.europa.ec.eudi.verifier.endpoint.port.out.web.util.StatusList
 import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -23,7 +25,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
-import java.util.*
 
 @Serializable
 data class StatusListJwt(
@@ -73,22 +74,18 @@ class GetStatusListClient(
     private val logger: Logger = LoggerFactory.getLogger(GetStatusListClient::class.java)
 
     override suspend operator fun invoke(id: String): ClientResponse<StatusListWithBits> {
-        val statusList = statusListWebClient
+        val statusListResponse = statusListWebClient
             .get()
             .uri("/$id")
             .retrieve()
-            .awaitBody<ByteArray>()
+            .awaitBody<String>()
 
-        val statusListJwt = toStatusListJwt(statusList)
-        logger.info("headerDecoded: ${statusListJwt.header}")
-        logger.info("payloadDecoded: ${statusListJwt.payload}")
-
-        val statusListJwtHeader = toStatusListJWTHeader(statusListJwt)
-        val statusListJwtPayload = toStatusListJWTPayload(statusListJwt)
-        logger.info("statusListJwtHeader: $statusListJwtHeader, statusListJwtPayload: $statusListJwtPayload")
+        val jwt = toSignedJWT(statusListResponse)
+        val statusListJwtPayload = toStatusListJwtPayload(jwt.payload.toString())
+        logger.info("statusListJwtPayload: $statusListJwtPayload")
 
         val statusListWithBits = toStatusListWithBits(statusListJwtPayload)
-        logger.info("statusListWithBits: $statusListWithBits")
+        logger.debug("statusListWithBits: {}", statusListWithBits)
 
         return when (statusListWithBits.totalStatuses > 0) {
             true -> ClientResponse.Found(statusListWithBits)
@@ -96,37 +93,20 @@ class GetStatusListClient(
         }
     }
 
-    private fun toStatusListJwt(bytes: ByteArray): StatusListJwt {
-        val response = bytes.toString(Charsets.UTF_8)
-        val chunks: List<String> = response.split(".")
-        val header = chunks.getOrElse(0) { "" }
-        val payload = chunks.getOrElse(1) { "" }
-        val signature = chunks.getOrElse(2) { "" }
-
-        val decoder = Base64.getUrlDecoder()
-        val headerDecoded = decoder.decode(header).toString(Charsets.UTF_8)
-        val payloadDecoded = decoder.decode(payload).toString(Charsets.UTF_8)
-        val signatureDecoded = decoder.decode(signature).toString(Charsets.UTF_8)
-
-        return StatusListJwt(headerDecoded, payloadDecoded, signatureDecoded)
+    private fun toSignedJWT(jwt: String): SignedJWT {
+        return SignedJWT.parse(jwt)
     }
 
-    private fun toStatusListJWTHeader(statusListJwt: StatusListJwt): JWTHeaderParameters {
-        return gson.fromJson(statusListJwt.header, JWTHeaderParameters::class.java)
+    private fun toStatusListJwtPayload(jwtPayload: String): StatusListJWTPayload {
+        return gson.fromJson(jwtPayload, StatusListJWTPayload::class.java)
     }
 
-    private fun toStatusListJWTPayload(statusListJwt: StatusListJwt): StatusListJWTPayload {
-        return gson.fromJson(statusListJwt.payload, StatusListJWTPayload::class.java)
-    }
-
-    private fun toStatusListWithBits(statusListJWTPayload: StatusListJWTPayload): StatusListWithBits {
-        val statusListDecoded = StatusList.fromEncoded(statusListJWTPayload.status_list.bits, statusListJWTPayload.status_list.lst)
-        logger.info("statusListDecoded: $statusListDecoded")
-
+    private fun toStatusListWithBits(statusListJwtPayload: StatusListJWTPayload): StatusListWithBits {
+        val list = StatusList.fromEncoded(statusListJwtPayload.status_list.bits, statusListJwtPayload.status_list.lst).getList()
         return StatusListWithBits(
-            statusListDecoded.getList(),
-            statusListJWTPayload.status_list.bits,
-            statusListDecoded.getList().size,
+            list,
+            statusListJwtPayload.status_list.bits,
+            list.size,
         )
     }
 }
