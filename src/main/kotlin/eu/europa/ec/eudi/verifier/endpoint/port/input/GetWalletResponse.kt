@@ -54,8 +54,8 @@ data class DocumentStatusTO(
 @Serializable
 @SerialName("attestation_document")
 data class AttestationDocumentTO(
-    @SerialName("docType") val docType: String,
-    @SerialName("attributes") val attributes: AttestationDocumentAttributesTO,
+    @SerialName("docType") val docType: String? = null,
+    @SerialName("attributes") val attributes: AttestationDocumentAttributesTO? = null,
 )
 
 @Serializable
@@ -136,10 +136,18 @@ internal suspend fun WalletResponse.toTO(getStatusListClient: GetStatusListClien
 }
 
 internal suspend fun formatStatuses(elements: List<JsonElement>, getStatusListClient: GetStatusListClient): List<DocumentStatusTO>? {
-    return elements.map { element -> Json.decodeFromJsonElement<AttestationDocumentTO>(element) }
+    return elements
+        .map { element ->
+            try {
+                Json.decodeFromJsonElement<AttestationDocumentTO>(element)
+            } catch (_: Exception) {
+            }
+        }
+        .filterIsInstance<AttestationDocumentTO>()
+        .filter { it.docType != null && it.attributes == null }
         .map {
-            val pidAttributes = it.attributes.pidAttributes
-            val mdlAttributes = it.attributes.mdlAttributes
+            val pidAttributes = it.attributes?.pidAttributes
+            val mdlAttributes = it.attributes?.mdlAttributes
             var documentNumber: String? = null
             var idx: Int? = null
             var uri: String? = null
@@ -205,9 +213,9 @@ class GetWalletResponseLive(
     }
 
     private suspend fun found(presentation: Presentation.Submitted): Found<WalletResponseTO> {
-        val walletResponse = when (environment.getProperty("statusList.enabled", "true").toBooleanStrict()) {
+        val walletResponse = when (environment.getProperty("statusList.enabled", "true").toBooleanStrictOrNull()) {
             true -> presentation.walletResponse.toTO(getStatusListClient)
-            false -> presentation.walletResponse.toTO()
+            else -> presentation.walletResponse.toTO()
         }
 
         logVerifierGotWalletResponse(presentation, walletResponse)
