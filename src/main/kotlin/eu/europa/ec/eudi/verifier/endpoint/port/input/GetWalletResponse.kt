@@ -21,11 +21,12 @@ import eu.europa.ec.eudi.verifier.endpoint.port.input.QueryResponse.*
 import eu.europa.ec.eudi.verifier.endpoint.port.out.persistence.LoadPresentationById
 import eu.europa.ec.eudi.verifier.endpoint.port.out.persistence.PresentationEvent
 import eu.europa.ec.eudi.verifier.endpoint.port.out.persistence.PublishPresentationEvent
+import eu.europa.ec.eudi.verifier.endpoint.port.out.web.GetStatusListClient
+import eu.europa.ec.eudi.verifier.endpoint.port.out.web.StatusListWithBits
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.*
+import org.springframework.core.env.Environment
 import java.time.Clock
 
 /**
@@ -39,9 +40,59 @@ data class WalletResponseTO(
     @SerialName("presentation_submission") val presentationSubmission: PresentationSubmission? = null,
     @SerialName("error") val error: String? = null,
     @SerialName("error_description") val errorDescription: String? = null,
+    @SerialName("statuses") val statuses: List<DocumentStatusTO>? = null,
 )
 
-internal fun WalletResponse.toTO(): WalletResponseTO {
+@Serializable
+@SerialName("status_response")
+data class DocumentStatusTO(
+    @SerialName("document") val document: String,
+    @SerialName("status") val status: Byte? = null,
+    @SerialName("status_list") val statusList: StatusListWithBits,
+)
+
+@Serializable
+@SerialName("attestation_document")
+data class AttestationDocumentTO(
+    @SerialName("docType") val docType: String,
+    @SerialName("attributes") val attributes: AttestationDocumentAttributesTO,
+)
+
+@Serializable
+@SerialName("attributes")
+data class AttestationDocumentAttributesTO(
+    @SerialName("eu.europa.ec.eudi.pid.1") val pidAttributes: AttestationDocumentPidAttributesTO? = null,
+    @SerialName("org.iso.18013.5.1.mDL") val mdlAttributes: AttestationDocumentMdlAttributesTO? = null,
+)
+
+@Serializable
+@SerialName("eu.europa.ec.eudi.pid.1")
+data class AttestationDocumentPidAttributesTO(
+    @SerialName("document_number") val documentNumber: String,
+    @SerialName("status") val status: DocumentStatusResponse? = null,
+)
+
+@Serializable
+@SerialName("org.iso.18013.5.1.mDL")
+data class AttestationDocumentMdlAttributesTO(
+    @SerialName("document_number") val documentNumber: String,
+    @SerialName("status") val status: DocumentStatusResponse? = null,
+)
+
+@Serializable
+@SerialName("status")
+data class DocumentStatusResponse(
+    @SerialName("status_list") val statusList: DocumentStatusListResponse? = null,
+)
+
+@Serializable
+@SerialName("status_list")
+data class DocumentStatusListResponse(
+    @SerialName("idx") val idx: Int? = null,
+    @SerialName("uri") val uri: String? = null,
+)
+
+internal suspend fun WalletResponse.toTO(getStatusListClient: GetStatusListClient? = null): WalletResponseTO {
     fun VerifiablePresentation.toJsonElement(): JsonElement =
         when (this) {
             is VerifiablePresentation.Generic -> JsonPrimitive(value)
@@ -52,12 +103,28 @@ internal fun WalletResponse.toTO(): WalletResponseTO {
         is WalletResponse.IdToken -> WalletResponseTO(idToken = idToken)
         is WalletResponse.VpToken -> WalletResponseTO(
             vpToken = JsonArray(vpContent.verifiablePresentations().map { it.toJsonElement() }),
+            statuses = when (getStatusListClient) {
+                is GetStatusListClient -> formatStatuses(
+                    vpContent.verifiablePresentations().map { it.toJsonElement() },
+                    getStatusListClient,
+                )
+                else -> null
+            },
             presentationSubmission = vpContent.presentationSubmissionOrNull(),
         )
 
         is WalletResponse.IdAndVpToken -> WalletResponseTO(
             idToken = idToken,
             vpToken = JsonArray(vpContent.verifiablePresentations().map { it.toJsonElement() }),
+            statuses = (
+                when (getStatusListClient) {
+                    is GetStatusListClient -> formatStatuses(
+                        vpContent.verifiablePresentations().map { it.toJsonElement() },
+                        getStatusListClient,
+                    )
+                    else -> null
+                }
+                ),
             presentationSubmission = vpContent.presentationSubmissionOrNull(),
         )
 
@@ -66,6 +133,42 @@ internal fun WalletResponse.toTO(): WalletResponseTO {
             errorDescription = description,
         )
     }
+}
+
+internal suspend fun formatStatuses(elements: List<JsonElement>, getStatusListClient: GetStatusListClient): List<DocumentStatusTO>? {
+    return elements.map { element -> Json.decodeFromJsonElement<AttestationDocumentTO>(element) }
+        .map {
+            val pidAttributes = it.attributes.pidAttributes
+            val mdlAttributes = it.attributes.mdlAttributes
+            var documentNumber: String? = null
+            var idx: Int? = null
+            var uri: String? = null
+            if (pidAttributes != null) {
+                documentNumber = pidAttributes.documentNumber
+                idx = pidAttributes.status?.statusList?.idx
+                uri = pidAttributes.status?.statusList?.uri
+            } else if (mdlAttributes != null) {
+                documentNumber = mdlAttributes.documentNumber
+                idx = mdlAttributes.status?.statusList?.idx
+                uri = mdlAttributes.status?.statusList?.uri
+            }
+
+            if (documentNumber != null && idx != null && uri != null) {
+                when (val statusListWithBits = getStatusListClient.doInvoke(uri)) {
+                    is StatusListWithBits -> DocumentStatusTO(
+                        documentNumber,
+                        statusListWithBits.statusList.getOrNull(idx),
+                        statusListWithBits,
+                    )
+
+                    else -> null
+                }
+            } else {
+                null
+            }
+        }
+        .filterNotNull()
+        .toList()
 }
 
 /**
@@ -82,6 +185,8 @@ class GetWalletResponseLive(
     private val clock: Clock,
     private val loadPresentationById: LoadPresentationById,
     private val publishPresentationEvent: PublishPresentationEvent,
+    private val getStatusListClient: GetStatusListClient,
+    private val environment: Environment,
 ) : GetWalletResponse {
     override suspend fun invoke(
         transactionId: TransactionId,
@@ -100,7 +205,11 @@ class GetWalletResponseLive(
     }
 
     private suspend fun found(presentation: Presentation.Submitted): Found<WalletResponseTO> {
-        val walletResponse = presentation.walletResponse.toTO()
+        val walletResponse = when (environment.getProperty("statusList.enabled", "true").toBooleanStrict()) {
+            true -> presentation.walletResponse.toTO(getStatusListClient)
+            false -> presentation.walletResponse.toTO()
+        }
+
         logVerifierGotWalletResponse(presentation, walletResponse)
         return Found(walletResponse)
     }

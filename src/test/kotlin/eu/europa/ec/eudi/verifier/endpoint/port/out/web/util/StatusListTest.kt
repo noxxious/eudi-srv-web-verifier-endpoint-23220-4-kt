@@ -27,7 +27,7 @@ class StatusListTest {
         val bits = 1
         val token = "eNrbuRgAAhcBXQ"
 
-        val indicesOfValidStatuses = listOf(0, 3, 4, 5, 7, 8, 9, 13, 15)
+        val indicesOfStatus1 = listOf(0, 3, 4, 5, 7, 8, 9, 13, 15)
 
         val list = StatusList.fromEncoded(bits, token).getList()
 
@@ -36,7 +36,7 @@ class StatusListTest {
         assertEquals(7, list.filter { it == 0.toByte() }.size)
 
         for (i in list.indices) {
-            if (indicesOfValidStatuses.contains(i)) {
+            if (indicesOfStatus1.contains(i)) {
                 assertEquals(1, list[i])
             } else {
                 assertEquals(0, list[i])
@@ -53,7 +53,7 @@ class StatusListTest {
             "A7KpLAAAAAAAAAAAAAAAAAAAAAJsLCQAAAAAAAAAAADjelAAAAAAAAAAAKjDMAQAAA\n" +
             "ACAZC8L2AEb"
 
-        val indicesOfValidStatuses = listOf(0, 1993, 25460, 159495, 495669, 554353, 645645, 723232, 854545, 934534, 1000345)
+        val indicesOfStatus1 = listOf(0, 1993, 25460, 159495, 495669, 554353, 645645, 723232, 854545, 934534, 1000345)
 
         val list = StatusList.fromEncoded(bits, token).getList()
 
@@ -62,7 +62,7 @@ class StatusListTest {
         assertEquals(1048565, list.filter { it == 0.toByte() }.size)
 
         for (i in list.indices) {
-            if (indicesOfValidStatuses.contains(i)) {
+            if (indicesOfStatus1.contains(i)) {
                 assertEquals(1, list[i])
             } else {
                 assertEquals(0, list[i])
@@ -75,7 +75,7 @@ class StatusListTest {
         val bits = 2
         val token = "eNo76fITAAPfAgc"
 
-        val indicesOfValidStatuses = listOf(0, 5, 7, 8)
+        val indicesOfStatus1 = listOf(0, 5, 7, 8)
         val indicesOfStatus2 = listOf(1, 9)
         val indicesOfStatus3 = listOf(3, 10, 11)
 
@@ -88,7 +88,7 @@ class StatusListTest {
         assertEquals(3, list.filter { it == 0.toByte() }.size)
 
         for (i in list.indices) {
-            if (indicesOfValidStatuses.contains(i)) {
+            if (indicesOfStatus1.contains(i)) {
                 assertEquals(1, list[i])
             } else if (indicesOfStatus2.contains(i)) {
                 assertEquals(2, list[i])
@@ -111,7 +111,7 @@ class StatusListTest {
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwJEuAQAAAAAAAAAAAAAAAAAAAAAAAMB9S\n" +
             "wIAAAAAAAAAAAAAAAAAAACoYUoAAAAAAAAAAAAAAEBqH81gAQw"
 
-        val indicesOfValidStatuses = listOf(0, 25460, 495669, 554353, 723232, 854545)
+        val indicesOfStatus1 = listOf(0, 25460, 495669, 554353, 723232, 854545)
         val indicesOfStatus2 = listOf(1993, 645645, 934534)
         val indicesOfStatus3 = listOf(159495, 1000345)
 
@@ -124,7 +124,7 @@ class StatusListTest {
         assertEquals(1048565, list.filter { it == 0.toByte() }.size)
 
         for (i in list.indices) {
-            if (indicesOfValidStatuses.contains(i)) {
+            if (indicesOfStatus1.contains(i)) {
                 assertEquals(1, list[i])
             } else if (indicesOfStatus2.contains(i)) {
                 assertEquals(2, list[i])
@@ -153,7 +153,7 @@ class StatusListTest {
             "AAAAAAAAAAAAAAAAAAAAAAABx3AoAgLpVAQAAAAAAAAAAAAAAwM89rwMAAAAAAAAAA\n" +
             "AjsA9xMBMA"
 
-        val indicesOfValidStatuses = listOf(0)
+        val indicesOfStatus1 = listOf(0)
         val indicesOfStatus2 = listOf(1993)
         val indicesOfStatus3 = listOf(35460)
         val indicesOfStatus4 = listOf(459495)
@@ -190,7 +190,7 @@ class StatusListTest {
         assertEquals(1048561, list.filter { it == 0.toByte() }.size)
 
         for (i in list.indices) {
-            if (indicesOfValidStatuses.contains(i)) {
+            if (indicesOfStatus1.contains(i)) {
                 assertEquals(1, list[i])
             } else if (indicesOfStatus2.contains(i)) {
                 assertEquals(2, list[i])
@@ -546,7 +546,7 @@ class StatusListTest {
 
         assertEquals(1048576, list.size)
         for (i in 1..255) {
-            assertEquals(1, list.filter { it == i.toByte() }.size, "Invalid for i = $i")
+            assertEquals(1, list.filter { it == i.toByte() }.size, "Unexpected result for for i = $i")
         }
         assertEquals(1048321, list.filter { it == 0.toByte() }.size)
 
@@ -557,7 +557,7 @@ class StatusListTest {
                 assertEquals(
                     indicesAndValues.find { it.index == i }?.value?.toByte(),
                     list[i],
-                    "Invalid for i = $i, (index, value) = ($index, $value)",
+                    "Unexpected result for i = $i, (index, value) = ($index, $value)",
                 )
             } else {
                 assertEquals(0.toByte(), list[i])

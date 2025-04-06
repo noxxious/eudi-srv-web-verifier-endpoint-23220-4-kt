@@ -61,7 +61,6 @@ import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.config.web.server.invoke
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.reactive.CorsConfigurationSource
-import org.springframework.web.reactive.function.client.WebClient
 import java.security.KeyStore
 import java.security.cert.X509Certificate
 import java.time.Clock
@@ -114,12 +113,6 @@ internal fun beans(clock: Clock) = beans {
         bean { deletePresentationsInitiatedBefore }
     }
 
-    bean {
-        WebClient.builder()
-            .baseUrl(env.statusListPublicUrl())
-            .build()
-    }
-
     bean { CreateQueryWalletResponseRedirectUri.Simple }
 
     //
@@ -144,8 +137,8 @@ internal fun beans(clock: Clock) = beans {
     bean { GetRequestObjectLive(ref(), ref(), ref(), ref(), clock, ref()) }
     bean { GetStatusListObjectLive(ref()) }
     bean { GetStatusListAggregationObjectLive(ref()) }
-    bean { GetStatusListClient(ref(), ref()) }
-    bean { GetStatusListAggregationClient(ref(), ref()) }
+    bean { GetStatusListClient(ref()) }
+    bean { GetStatusListAggregationClient() }
 
     bean { GetPresentationDefinitionLive(clock, ref(), ref()) }
     bean {
@@ -167,7 +160,7 @@ internal fun beans(clock: Clock) = beans {
     bean { GenerateResponseCode.Random }
     bean { PostWalletResponseLive(ref(), ref(), ref(), clock, ref(), ref(), ref(), ref()) }
     bean { GenerateEphemeralEncryptionKeyPairNimbus }
-    bean { GetWalletResponseLive(clock, ref(), ref()) }
+    bean { GetWalletResponseLive(clock, ref(), ref(), ref(), ref()) }
     bean { GetJarmJwksLive(ref(), clock, ref()) }
     bean { GetPresentationEventsLive(ref(), ref()) }
     bean { ValidateMsoMdocDeviceResponse(clock, trustedIssuers) }
@@ -199,7 +192,7 @@ internal fun beans(clock: Clock) = beans {
             ref<VerifierConfig>().verifierId.jarSigning.key,
         )
         val verifierApi = VerifierApi(ref(), ref(), ref())
-        val statusListApi = StatusListApi(ref(), ref(), ref())
+        val statusListApi = StatusListApi(ref(), ref())
         val staticContent = StaticContent()
         val swaggerUi = SwaggerUi(
             publicResourcesBasePath = env.getRequiredProperty("spring.webflux.static-path-pattern").removeSuffix("/**"),
@@ -421,7 +414,6 @@ private fun Environment.clientMetaData(publicUrl: String): ClientMetaData {
  * Gets the public URL of the Verifier endpoint. Corresponds to `verifier.publicUrl` property.
  */
 private fun Environment.publicUrl(): String = getProperty("verifier.publicUrl", "http://localhost:8080")
-private fun Environment.statusListPublicUrl(): String = getProperty("statusList.publicUrl", "http://localhost:8085")
 
 /**
  * Creates a copy of this [JWK] and sets the provided [X509Certificate] certificate chain.

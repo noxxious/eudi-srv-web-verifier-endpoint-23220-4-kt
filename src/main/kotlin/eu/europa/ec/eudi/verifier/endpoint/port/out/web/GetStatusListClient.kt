@@ -62,21 +62,35 @@ data class StatusListWithBits(
     @SerialName("totalStatuses") @Required val totalStatuses: Int,
 )
 
-fun interface StatusListClient {
-    suspend operator fun invoke(id: String): ClientResponse<StatusListWithBits>
+interface StatusListClient {
+    suspend operator fun invoke(url: String): ClientResponse<StatusListWithBits>
+    suspend fun doInvoke(url: String): StatusListWithBits?
 }
 
 class GetStatusListClient(
-    private val statusListWebClient: WebClient,
     private val gson: Gson,
 ) : StatusListClient {
 
     private val logger: Logger = LoggerFactory.getLogger(GetStatusListClient::class.java)
 
-    override suspend operator fun invoke(id: String): ClientResponse<StatusListWithBits> {
-        val statusListResponse = statusListWebClient
+    override suspend operator fun invoke(url: String): ClientResponse<StatusListWithBits> {
+        val statusListWithBits = doInvoke(url)
+
+        return if (statusListWithBits != null) {
+            when (statusListWithBits.totalStatuses > 0) {
+                true -> ClientResponse.Found(statusListWithBits)
+                false -> ClientResponse.NotFound
+            }
+        } else {
+            return ClientResponse.NotFound
+        }
+    }
+
+    override suspend fun doInvoke(url: String): StatusListWithBits? {
+        val statusListResponse = WebClient.builder()
+            .baseUrl(url)
+            .build()
             .get()
-            .uri("/$id")
             .retrieve()
             .awaitBody<String>()
 
@@ -88,8 +102,8 @@ class GetStatusListClient(
         logger.debug("statusListWithBits: {}", statusListWithBits)
 
         return when (statusListWithBits.totalStatuses > 0) {
-            true -> ClientResponse.Found(statusListWithBits)
-            false -> ClientResponse.NotFound
+            true -> statusListWithBits
+            false -> null
         }
     }
 

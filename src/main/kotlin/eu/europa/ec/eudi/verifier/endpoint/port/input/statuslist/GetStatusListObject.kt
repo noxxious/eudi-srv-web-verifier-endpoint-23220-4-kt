@@ -37,11 +37,11 @@ class GetStatusListObjectLive(
     private val logger: Logger = LoggerFactory.getLogger(GetStatusListObjectLive::class.java)
 
     override suspend operator fun invoke(req: ServerRequest): QueryResponse<StatusListWithBits> {
-        val id = req.queryParam("id").getOrNull()
-        logger.info("Querying status list: {}", id)
+        val url = req.queryParam("url").getOrNull()
+        logger.info("Querying status list: {}", url)
 
-        return if (id != null)
-            when (val statusList = getStatusListLive.invoke(id)) {
+        return if (url != null)
+            when (val statusList = getStatusListLive.invoke(url)) {
                 is ClientResponse.Found -> Found(statusList.value)
                 is ClientResponse.NotFound -> QueryResponse.NotFound
                 else -> invalidState()
