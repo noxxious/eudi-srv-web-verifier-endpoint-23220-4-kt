@@ -23,9 +23,11 @@ import eu.europa.ec.eudi.verifier.endpoint.port.out.web.GetStatusListAggregation
 import eu.europa.ec.eudi.verifier.endpoint.port.out.web.StatusListAggregation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.web.reactive.function.server.ServerRequest
+import kotlin.jvm.optionals.getOrNull
 
 fun interface GetStatusListAggregationObject {
-    suspend operator fun invoke(): QueryResponse<StatusListAggregation>
+    suspend operator fun invoke(req: ServerRequest): QueryResponse<StatusListAggregation>
 }
 
 class GetStatusListAggregationObjectLive(
@@ -34,12 +36,18 @@ class GetStatusListAggregationObjectLive(
 
     private val logger: Logger = LoggerFactory.getLogger(GetStatusListAggregationObjectLive::class.java)
 
-    override suspend operator fun invoke(): QueryResponse<StatusListAggregation> {
-        return when (val statusListAggregation = getStatusListAggregationLive.invoke()) {
-            is ClientResponse.Found -> Found(statusListAggregation.value)
-            is ClientResponse.NotFound -> QueryResponse.NotFound
-            else -> invalidState()
-        }
+    override suspend operator fun invoke(req: ServerRequest): QueryResponse<StatusListAggregation> {
+        val url = req.queryParam("url").getOrNull()
+        logger.info("Querying status list aggregation: {}", url)
+
+        return if (url != null)
+            when (val statusListAggregation = getStatusListAggregationLive.invoke(url)) {
+                is ClientResponse.Found -> Found(statusListAggregation.value)
+                is ClientResponse.NotFound -> QueryResponse.NotFound
+                else -> invalidState()
+            }
+        else
+            invalidState()
     }
 
     private fun invalidState(): InvalidState {

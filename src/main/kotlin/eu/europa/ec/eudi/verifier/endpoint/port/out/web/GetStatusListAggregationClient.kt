@@ -18,7 +18,6 @@ package eu.europa.ec.eudi.verifier.endpoint.port.out.web
 import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.springframework.core.env.Environment
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 
@@ -28,18 +27,16 @@ data class StatusListAggregation(
 )
 
 fun interface StatusListAggregationClient {
-    suspend operator fun invoke(): ClientResponse<StatusListAggregation>
+    suspend operator fun invoke(url: String): ClientResponse<StatusListAggregation>
 }
 
-class GetStatusListAggregationClient(
-    private val statusListWebClient: WebClient,
-    private val environment: Environment,
-) : StatusListAggregationClient {
+class GetStatusListAggregationClient : StatusListAggregationClient {
 
-    override suspend operator fun invoke(): ClientResponse<StatusListAggregation> {
-        val statusListAggregation = statusListWebClient
+    override suspend operator fun invoke(url: String): ClientResponse<StatusListAggregation> {
+        val statusListAggregation = WebClient.builder()
+            .baseUrl(url)
+            .build()
             .get()
-            .uri("/aggregation/${environment.getProperty("statusList.poolId")}")
             .retrieve()
             .awaitBody<StatusListAggregation>()
 
