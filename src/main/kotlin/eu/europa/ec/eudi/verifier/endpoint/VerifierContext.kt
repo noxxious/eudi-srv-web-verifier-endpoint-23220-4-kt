@@ -19,6 +19,7 @@ import arrow.core.NonEmptyList
 import arrow.core.recover
 import arrow.core.some
 import arrow.core.toNonEmptyListOrNull
+import com.google.gson.Gson
 import com.nimbusds.jose.EncryptionMethod
 import com.nimbusds.jose.JWEAlgorithm
 import com.nimbusds.jose.JWSAlgorithm
@@ -39,8 +40,12 @@ import eu.europa.ec.eudi.verifier.endpoint.adapter.out.jose.VerifyJarmEncryptedJ
 import eu.europa.ec.eudi.verifier.endpoint.adapter.out.persistence.PresentationInMemoryRepo
 import eu.europa.ec.eudi.verifier.endpoint.domain.*
 import eu.europa.ec.eudi.verifier.endpoint.port.input.*
+import eu.europa.ec.eudi.verifier.endpoint.port.input.statuslist.GetStatusListAggregationObjectLive
+import eu.europa.ec.eudi.verifier.endpoint.port.input.statuslist.GetStatusListObjectLive
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.CreateQueryWalletResponseRedirectUri
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.GenerateResponseCode
+import eu.europa.ec.eudi.verifier.endpoint.port.out.web.GetStatusListAggregationClient
+import eu.europa.ec.eudi.verifier.endpoint.port.out.web.GetStatusListClient
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
@@ -130,6 +135,10 @@ internal fun beans(clock: Clock) = beans {
     }
 
     bean { GetRequestObjectLive(ref(), ref(), ref(), ref(), clock, ref()) }
+    bean { GetStatusListObjectLive(ref()) }
+    bean { GetStatusListAggregationObjectLive(ref()) }
+    bean { GetStatusListClient(ref()) }
+    bean { GetStatusListAggregationClient() }
 
     bean { GetPresentationDefinitionLive(clock, ref(), ref()) }
     bean {
@@ -151,7 +160,7 @@ internal fun beans(clock: Clock) = beans {
     bean { GenerateResponseCode.Random }
     bean { PostWalletResponseLive(ref(), ref(), ref(), clock, ref(), ref(), ref(), ref()) }
     bean { GenerateEphemeralEncryptionKeyPairNimbus }
-    bean { GetWalletResponseLive(clock, ref(), ref()) }
+    bean { GetWalletResponseLive(clock, ref(), ref(), ref(), ref()) }
     bean { GetJarmJwksLive(ref(), clock, ref()) }
     bean { GetPresentationEventsLive(ref(), ref()) }
     bean { ValidateMsoMdocDeviceResponse(clock, trustedIssuers) }
@@ -168,6 +177,8 @@ internal fun beans(clock: Clock) = beans {
     //
     bean { verifierConfig(env, clock) }
 
+    bean { Gson() }
+
     //
     // End points
     //
@@ -181,6 +192,7 @@ internal fun beans(clock: Clock) = beans {
             ref<VerifierConfig>().verifierId.jarSigning.key,
         )
         val verifierApi = VerifierApi(ref(), ref(), ref())
+        val statusListApi = StatusListApi(ref(), ref())
         val staticContent = StaticContent()
         val swaggerUi = SwaggerUi(
             publicResourcesBasePath = env.getRequiredProperty("spring.webflux.static-path-pattern").removeSuffix("/**"),
@@ -190,6 +202,7 @@ internal fun beans(clock: Clock) = beans {
         val utilityApi = UtilityApi(ref(), ref())
         walletApi.route
             .and(verifierApi.route)
+            .and(statusListApi.route)
             .and(staticContent.route)
             .and(swaggerUi.route)
             .and(utilityApi.route)
