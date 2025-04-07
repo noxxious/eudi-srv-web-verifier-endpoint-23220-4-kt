@@ -269,6 +269,7 @@ curl -X POST -H "Content-type: application/json" -d '{
         "input_descriptors": [
             {
                 "constraints": {
+                    "limit_disclosure": "required",
                     "fields": [
                         {
                             "intent_to_retain": false,
