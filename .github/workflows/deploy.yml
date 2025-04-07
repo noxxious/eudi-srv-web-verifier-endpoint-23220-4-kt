@@ -88,6 +88,8 @@ jobs:
           source: ./
           tag: latest
           flags: >-
+              --add-volume name=test-stats,type=cloud-storage,bucket=${{ vars.TEST_STATS_BUCKET }} 
+              --add-volume-mount volume=test-stats,mount-path=/test-stats 
               --port 8080
           secrets_update_strategy: overwrite
           env_vars_update_strategy: overwrite
@@ -95,6 +97,7 @@ jobs:
             VERIFIER_PUBLICURL=${{ vars.VERIFIER_PUBLIC_URL }}
             VERIFIER_RESPONSE_MODE=${{ env.VERIFIER_RESPONSE_MODE }}
 
+            eudiw_test_stats
       - name: Discord notification
         uses: sarisia/actions-status-discord@v1
         if: always()
