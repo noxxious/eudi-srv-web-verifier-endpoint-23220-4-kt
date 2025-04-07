@@ -22,6 +22,7 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import eu.europa.ec.eudi.prex.PresentationDefinition
 import eu.europa.ec.eudi.verifier.endpoint.domain.*
+import eu.europa.ec.eudi.verifier.endpoint.port.input.persistence.RegistrationRepository
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.CreateQueryWalletResponseRedirectUri
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.GenerateRequestId
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.GenerateTransactionId
@@ -91,6 +92,16 @@ enum class EmbedModeTO {
 }
 
 @Serializable
+data class RegistrationDataTO(
+    @SerialName("readerCountry") val readerCountry: String? = null,
+    @SerialName("readerCompanyName") val readerCompanyName: String? = null,
+    @SerialName("holderTesterInitials") val holderTesterInitials: String? = null,
+    @SerialName("holderDevice") val holderDevice: String? = null,
+    @SerialName("dataset") val dataset: String? = null,
+    @SerialName("testScenario") val testScenario: String? = null,
+)
+
+@Serializable
 data class InitTransactionTO(
     @SerialName("type") val type: PresentationTypeTO = PresentationTypeTO.IdAndVpTokenRequest,
     @SerialName("id_token_type") val idTokenType: IdTokenTypeTO? = null,
@@ -101,6 +112,7 @@ data class InitTransactionTO(
     @SerialName("jar_mode") val jarMode: EmbedModeTO? = null,
     @SerialName("presentation_definition_mode") val presentationDefinitionMode: EmbedModeTO? = null,
     @SerialName("wallet_response_redirect_uri_template") val redirectUriTemplate: String? = null,
+    @SerialName("registration_data") val registrationData: RegistrationDataTO? = null,
 )
 
 /**
@@ -165,7 +177,7 @@ class InitTransactionLive(
     private val presentationDefinitionByReference: EmbedOption.ByReference<RequestId>,
     private val createQueryWalletResponseRedirectUri: CreateQueryWalletResponseRedirectUri,
     private val publishPresentationEvent: PublishPresentationEvent,
-
+    private val registrationRepository: RegistrationRepository,
 ) : InitTransaction {
 
     override suspend fun invoke(initTransactionTO: InitTransactionTO): Either<ValidationError, JwtSecuredAuthorizationRequestTO> = either {
@@ -191,6 +203,12 @@ class InitTransactionLive(
         )
         // create request, which may update presentation
         val (updatedPresentation, request) = createRequest(requestedPresentation, jarMode(initTransactionTO))
+
+        when (val regData = initTransactionTO.registrationData) {
+            is RegistrationDataTO -> {
+                registrationRepository.saveRegistrationData(regData, requestedPresentation.id)
+            }
+        }
 
         storePresentation(updatedPresentation)
         logTransactionInitialized(updatedPresentation, request)

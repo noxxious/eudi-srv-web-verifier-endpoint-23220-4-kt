@@ -19,6 +19,8 @@ import arrow.core.NonEmptyList
 import arrow.core.recover
 import arrow.core.some
 import arrow.core.toNonEmptyListOrNull
+import com.google.auth.oauth2.GoogleCredentials
+import com.google.cloud.firestore.FirestoreOptions
 import com.nimbusds.jose.EncryptionMethod
 import com.nimbusds.jose.JWEAlgorithm
 import com.nimbusds.jose.JWSAlgorithm
@@ -39,6 +41,7 @@ import eu.europa.ec.eudi.verifier.endpoint.adapter.out.jose.VerifyJarmEncryptedJ
 import eu.europa.ec.eudi.verifier.endpoint.adapter.out.persistence.PresentationInMemoryRepo
 import eu.europa.ec.eudi.verifier.endpoint.domain.*
 import eu.europa.ec.eudi.verifier.endpoint.port.input.*
+import eu.europa.ec.eudi.verifier.endpoint.port.input.persistence.RegistrationRepository
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.CreateQueryWalletResponseRedirectUri
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.GenerateResponseCode
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -110,6 +113,9 @@ internal fun beans(clock: Clock) = beans {
 
     bean { CreateQueryWalletResponseRedirectUri.Simple }
 
+    bean { getFirestoreOptions(env) }
+
+    bean { RegistrationRepository(ref(), env.getProperty("registrations.firestore.collectionName", "stats")) }
     //
     // Use cases
     //
@@ -124,6 +130,7 @@ internal fun beans(clock: Clock) = beans {
             ref(),
             WalletApi.requestJwtByReference(env.publicUrl()),
             WalletApi.presentationDefinitionByReference(env.publicUrl()),
+            ref(),
             ref(),
             ref(),
         )
@@ -401,6 +408,7 @@ private fun Environment.clientMetaData(publicUrl: String): ClientMetaData {
  * Gets the public URL of the Verifier endpoint. Corresponds to `verifier.publicUrl` property.
  */
 private fun Environment.publicUrl(): String = getProperty("verifier.publicUrl", "http://localhost:8080")
+private fun Environment.registrationsDatabaseId(): String = getProperty("registrations.firestore.databaseId", "issuerpid")
 
 /**
  * Creates a copy of this [JWK] and sets the provided [X509Certificate] certificate chain.
@@ -443,3 +451,10 @@ private fun Environment.getOptionalList(
         ?.filter { filter(it) }
         ?.map { transform(it) }
         ?.toNonEmptyListOrNull()
+
+private fun getFirestoreOptions(environment: Environment): FirestoreOptions {
+    return FirestoreOptions.newBuilder()
+        .setCredentials(GoogleCredentials.getApplicationDefault())
+        .setDatabaseId(environment.registrationsDatabaseId())
+        .build()
+}
