@@ -32,11 +32,6 @@ import eu.europa.ec.eudi.verifier.endpoint.port.input.persistence.RegistrationIn
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.CreateQueryWalletResponseRedirectUri
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.GenerateRequestId
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.GenerateTransactionId
-import java.security.KeyStore
-import java.time.Clock
-import java.time.LocalDate
-import java.time.ZoneOffset
-import kotlin.reflect.KClass
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.ApplicationContextInitializer
 import org.springframework.context.annotation.Configuration
@@ -45,6 +40,11 @@ import org.springframework.context.support.GenericApplicationContext
 import org.springframework.core.annotation.AliasFor
 import org.springframework.core.io.ClassPathResource
 import org.springframework.test.context.ContextConfiguration
+import java.security.KeyStore
+import java.time.Clock
+import java.time.LocalDate
+import java.time.ZoneOffset
+import kotlin.reflect.KClass
 
 object TestContext {
     private val testDate = LocalDate.of(1974, 11, 2).atTime(10, 5, 33)
@@ -60,20 +60,20 @@ object TestContext {
         }
     }
     val clientMetaData =
-            ClientMetaData(
-                    jwkOption = ByValue,
-                    idTokenSignedResponseAlg = JWSAlgorithm.RS256.name,
-                    idTokenEncryptedResponseAlg = JWEAlgorithm.RSA_OAEP_256.name,
-                    idTokenEncryptedResponseEnc = EncryptionMethod.A128CBC_HS256.name,
-                    subjectSyntaxTypesSupported =
-                            listOf(
-                                    "urn:ietf:params:oauth:jwk-thumbprint",
-                                    "did:example",
-                                    "did:key"
-                            ),
-                    jarmOption =
-                            ParseJarmOptionNimbus(null, JWEAlgorithm.ECDH_ES.name, "A256GCM")!!,
-            )
+        ClientMetaData(
+            jwkOption = ByValue,
+            idTokenSignedResponseAlg = JWSAlgorithm.RS256.name,
+            idTokenEncryptedResponseAlg = JWEAlgorithm.RSA_OAEP_256.name,
+            idTokenEncryptedResponseEnc = EncryptionMethod.A128CBC_HS256.name,
+            subjectSyntaxTypesSupported =
+                listOf(
+                    "urn:ietf:params:oauth:jwk-thumbprint",
+                    "did:example",
+                    "did:key",
+                ),
+            jarmOption =
+                ParseJarmOptionNimbus(null, JWEAlgorithm.ECDH_ES.name, "A256GCM")!!,
+        )
     private val jarSigningConfig: SigningConfig = SigningConfig(rsaJwk, JWSAlgorithm.RS256)
     val verifierId = VerifierId.X509SanDns("client-id", jarSigningConfig)
     val singRequestObject: SignRequestObjectNimbus = SignRequestObjectNimbus()
@@ -84,46 +84,46 @@ object TestContext {
     private val generateEphemeralKey = GenerateEphemeralEncryptionKeyPairNimbus
     private val registrationRepository = RegistrationInMemoryRepo()
     fun initTransaction(
-            verifierConfig: VerifierConfig,
-            requestJarByReference: EmbedOption.ByReference<RequestId>,
-            presentationDefinitionByReference: EmbedOption.ByReference<RequestId>,
+        verifierConfig: VerifierConfig,
+        requestJarByReference: EmbedOption.ByReference<RequestId>,
+        presentationDefinitionByReference: EmbedOption.ByReference<RequestId>,
     ): InitTransaction =
-            InitTransactionLive(
-                    generatedTransactionId,
-                    generateRequestId,
-                    storePresentation,
-                    singRequestObject,
-                    verifierConfig,
-                    testClock,
-                    generateEphemeralKey,
-                    requestJarByReference,
-                    presentationDefinitionByReference,
-                    CreateQueryWalletResponseRedirectUri.Simple,
-                    repo.publishPresentationEvent,
-                    registrationRepository,
-            )
+        InitTransactionLive(
+            generatedTransactionId,
+            generateRequestId,
+            storePresentation,
+            singRequestObject,
+            verifierConfig,
+            testClock,
+            generateEphemeralKey,
+            requestJarByReference,
+            presentationDefinitionByReference,
+            CreateQueryWalletResponseRedirectUri.Simple,
+            repo.publishPresentationEvent,
+            registrationRepository,
+        )
 }
 
 /** Meta annotation to be used with integration tests of the application */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 @SpringBootTest(
-        classes = [VerifierApplication::class],
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    classes = [VerifierApplication::class],
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
 )
 @ContextConfiguration(initializers = [BeansDslApplicationContextInitializer::class])
 internal annotation class VerifierApplicationTest(
 
-        /**
-         * [Configuration] classes that contain extra bean definitions. Useful for bean overriding
-         * using [Primary] annotation.
-         */
-        @get:AliasFor(annotation = ContextConfiguration::class) val classes: Array<KClass<*>> = [],
+    /**
+     * [Configuration] classes that contain extra bean definitions. Useful for bean overriding
+     * using [Primary] annotation.
+     */
+    @get:AliasFor(annotation = ContextConfiguration::class) val classes: Array<KClass<*>> = [],
 )
 
 /** [ApplicationContextInitializer] for use with [SpringBootTest]/[ContextConfiguration] */
 internal class BeansDslApplicationContextInitializer :
-        ApplicationContextInitializer<GenericApplicationContext> {
+    ApplicationContextInitializer<GenericApplicationContext> {
     override fun initialize(applicationContext: GenericApplicationContext) {
         beans(Clock.systemDefaultZone()).initializer().initialize(applicationContext)
     }

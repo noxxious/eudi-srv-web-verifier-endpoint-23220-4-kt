@@ -31,11 +31,11 @@ import eu.europa.ec.eudi.verifier.endpoint.port.out.jose.SignRequestObject
 import eu.europa.ec.eudi.verifier.endpoint.port.out.persistence.PresentationEvent
 import eu.europa.ec.eudi.verifier.endpoint.port.out.persistence.PublishPresentationEvent
 import eu.europa.ec.eudi.verifier.endpoint.port.out.persistence.StorePresentation
-import java.time.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Required
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.time.Clock
 
 /**
  * Represent the kind of [Presentation] process a caller wants to initiate It could be either a
@@ -43,57 +43,71 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 enum class PresentationTypeTO {
-    @SerialName("id_token") IdTokenRequest,
-    @SerialName("vp_token") VpTokenRequest,
-    @SerialName("vp_token id_token") IdAndVpTokenRequest,
+    @SerialName("id_token")
+    IdTokenRequest,
+
+    @SerialName("vp_token")
+    VpTokenRequest,
+
+    @SerialName("vp_token id_token")
+    IdAndVpTokenRequest,
 }
 
 /** Specifies what kind of id_token to request */
 @Serializable
 enum class IdTokenTypeTO {
-    @SerialName("subject_signed_id_token") SubjectSigned,
-    @SerialName("attester_signed_id_token") AttesterSigned,
+    @SerialName("subject_signed_id_token")
+    SubjectSigned,
+
+    @SerialName("attester_signed_id_token")
+    AttesterSigned,
 }
 
 /** Specifies the response_mode for a request */
 @Serializable
 enum class ResponseModeTO {
-    @SerialName("direct_post") DirectPost,
-    @SerialName("direct_post.jwt") DirectPostJwt,
+    @SerialName("direct_post")
+    DirectPost,
+
+    @SerialName("direct_post.jwt")
+    DirectPostJwt,
 }
 
 /** Specifies whether a property of a request will be provided by value or by reference. */
 @Serializable
 enum class EmbedModeTO {
-    @SerialName("by_value") ByValue,
-    @SerialName("by_reference") ByReference,
+    @SerialName("by_value")
+    ByValue,
+
+    @SerialName("by_reference")
+    ByReference,
 }
 
 @Serializable
 data class RegistrationDataTO(
-        @SerialName("readerCountry") val readerCountry: String? = null,
-        @SerialName("readerCompanyName") val readerCompanyName: String? = null,
-        @SerialName("holderTesterInitials") val holderTesterInitials: String? = null,
-        @SerialName("holderDevice") val holderDevice: String? = null,
-        @SerialName("dataset") val dataset: String? = null,
-        @SerialName("testScenario") val testScenario: String? = null,
+    @SerialName("readerCountry") val readerCountry: String? = null,
+    @SerialName("readerCompanyName") val readerCompanyName: String? = null,
+    @SerialName("holderTesterInitials") val holderTesterInitials: String? = null,
+    @SerialName("holderDevice") val holderDevice: String? = null,
+    @SerialName("dataset") val dataset: String? = null,
+    @SerialName("testScenario") val testScenario: String? = null,
 )
 
 @Serializable
 data class InitTransactionTO(
-        @SerialName("type") val type: PresentationTypeTO = PresentationTypeTO.IdAndVpTokenRequest,
-        @SerialName("id_token_type") val idTokenType: IdTokenTypeTO? = null,
-        @SerialName("presentation_definition")
-        val presentationDefinition: PresentationDefinition? = null,
-        @SerialName("dcql_query") val dcqlQuery: DCQL? = null,
-        @SerialName("nonce") val nonce: String? = null,
-        @SerialName("response_mode") val responseMode: ResponseModeTO? = null,
-        @SerialName("jar_mode") val jarMode: EmbedModeTO? = null,
-        @SerialName("presentation_definition_mode")
-        val presentationDefinitionMode: EmbedModeTO? = null,
-        @SerialName("wallet_response_redirect_uri_template")
-        val redirectUriTemplate: String? = null,
-        @SerialName("registration_data") val registrationData: RegistrationDataTO? = null,
+    @SerialName("type") val type: PresentationTypeTO = PresentationTypeTO.IdAndVpTokenRequest,
+    @SerialName("id_token_type") val idTokenType: IdTokenTypeTO? = null,
+    @SerialName("presentation_definition")
+    val presentationDefinition: PresentationDefinition? = null,
+    @SerialName("dcql_query") val dcqlQuery: DCQL? = null,
+    @SerialName("nonce") val nonce: String? = null,
+    @SerialName("response_mode") val responseMode: ResponseModeTO? = null,
+    @SerialName("jar_mode") val jarMode: EmbedModeTO? = null,
+    @SerialName("presentation_definition_mode")
+    val presentationDefinitionMode: EmbedModeTO? = null,
+    @SerialName("wallet_response_redirect_uri_template")
+    val redirectUriTemplate: String? = null,
+    @SerialName("registration_data") val registrationData: RegistrationDataTO? = null,
 )
 
 /** Possible validation errors of caller's input */
@@ -107,14 +121,14 @@ enum class ValidationError {
 /** The return value of successfully [initializing][InitTransaction] a [Presentation] */
 @Serializable
 data class JwtSecuredAuthorizationRequestTO(
-        @Required @SerialName("transaction_id") val transactionId: String,
-        @Required @SerialName("client_id") val clientId: ClientId,
-        @SerialName("request") val request: String? = null,
-        @SerialName("request_uri") val requestUri: String?,
+    @Required @SerialName("transaction_id") val transactionId: String,
+    @Required @SerialName("client_id") val clientId: ClientId,
+    @SerialName("request") val request: String? = null,
+    @SerialName("request_uri") val requestUri: String?,
 ) {
     @Deprecated(
-            message = "Kept for compatibility, will be removed in future release.",
-            replaceWith = ReplaceWith("this.transactionId"),
+        message = "Kept for compatibility, will be removed in future release.",
+        replaceWith = ReplaceWith("this.transactionId"),
     )
     @Required
     @SerialName("presentation_id")
@@ -136,28 +150,28 @@ data class JwtSecuredAuthorizationRequestTO(
 fun interface InitTransaction {
 
     suspend operator fun invoke(
-            initTransactionTO: InitTransactionTO
+        initTransactionTO: InitTransactionTO,
     ): Either<ValidationError, JwtSecuredAuthorizationRequestTO>
 }
 
 /** The default implementation of the use case */
 class InitTransactionLive(
-        private val generateTransactionId: GenerateTransactionId,
-        private val generateRequestId: GenerateRequestId,
-        private val storePresentation: StorePresentation,
-        private val signRequestObject: SignRequestObject,
-        private val verifierConfig: VerifierConfig,
-        private val clock: Clock,
-        private val generateEphemeralEncryptionKeyPair: GenerateEphemeralEncryptionKeyPair,
-        private val requestJarByReference: EmbedOption.ByReference<RequestId>,
-        private val presentationDefinitionByReference: EmbedOption.ByReference<RequestId>,
-        private val createQueryWalletResponseRedirectUri: CreateQueryWalletResponseRedirectUri,
-        private val publishPresentationEvent: PublishPresentationEvent,
-        private val registrationRepository: RegistrationRepositoryObject,
+    private val generateTransactionId: GenerateTransactionId,
+    private val generateRequestId: GenerateRequestId,
+    private val storePresentation: StorePresentation,
+    private val signRequestObject: SignRequestObject,
+    private val verifierConfig: VerifierConfig,
+    private val clock: Clock,
+    private val generateEphemeralEncryptionKeyPair: GenerateEphemeralEncryptionKeyPair,
+    private val requestJarByReference: EmbedOption.ByReference<RequestId>,
+    private val presentationDefinitionByReference: EmbedOption.ByReference<RequestId>,
+    private val createQueryWalletResponseRedirectUri: CreateQueryWalletResponseRedirectUri,
+    private val publishPresentationEvent: PublishPresentationEvent,
+    private val registrationRepository: RegistrationRepositoryObject,
 ) : InitTransaction {
 
     override suspend fun invoke(
-            initTransactionTO: InitTransactionTO
+        initTransactionTO: InitTransactionTO,
     ): Either<ValidationError, JwtSecuredAuthorizationRequestTO> = either {
         // validate input
         val (nonce, type) = initTransactionTO.toDomain().bind()
@@ -169,20 +183,20 @@ class InitTransactionLive(
 
         // Initialize presentation
         val requestedPresentation =
-                Presentation.Requested(
-                        id = generateTransactionId(),
-                        initiatedAt = clock.instant(),
-                        requestId = generateRequestId(),
-                        type = type,
-                        nonce = nonce,
-                        ephemeralEcPrivateKey = newEphemeralEcPublicKey,
-                        responseMode = responseMode,
-                        presentationDefinitionMode = presentationDefinitionMode(initTransactionTO),
-                        getWalletResponseMethod = getWalletResponseMethod,
-                )
+            Presentation.Requested(
+                id = generateTransactionId(),
+                initiatedAt = clock.instant(),
+                requestId = generateRequestId(),
+                type = type,
+                nonce = nonce,
+                ephemeralEcPrivateKey = newEphemeralEcPublicKey,
+                responseMode = responseMode,
+                presentationDefinitionMode = presentationDefinitionMode(initTransactionTO),
+                getWalletResponseMethod = getWalletResponseMethod,
+            )
         // create request, which may update presentation
         val (updatedPresentation, request) =
-                createRequest(requestedPresentation, jarMode(initTransactionTO))
+            createRequest(requestedPresentation, jarMode(initTransactionTO))
 
         when (val regData = initTransactionTO.registrationData) {
             is RegistrationDataTO -> {
@@ -196,17 +210,17 @@ class InitTransactionLive(
     }
 
     private fun ephemeralEncryptionKeyPair(
-            responseModeOption: ResponseModeOption
+        responseModeOption: ResponseModeOption,
     ): EphemeralEncryptionKeyPairJWK? =
-            when (responseModeOption) {
-                ResponseModeOption.DirectPost -> null
-                ResponseModeOption.DirectPostJwt ->
-                        when (val jarmOption = verifierConfig.clientMetaData.jarmOption) {
-                            is JarmOption.Signed -> error("Misconfiguration")
-                            is JarmOption.Encrypted -> jarmOption
-                            is JarmOption.SignedAndEncrypted -> jarmOption.encrypted
-                        }.run { generateEphemeralEncryptionKeyPair(this).getOrThrow() }
-            }
+        when (responseModeOption) {
+            ResponseModeOption.DirectPost -> null
+            ResponseModeOption.DirectPostJwt ->
+                when (val jarmOption = verifierConfig.clientMetaData.jarmOption) {
+                    is JarmOption.Signed -> error("Misconfiguration")
+                    is JarmOption.Encrypted -> jarmOption
+                    is JarmOption.SignedAndEncrypted -> jarmOption.encrypted
+                }.run { generateEphemeralEncryptionKeyPair(this).getOrThrow() }
+        }
 
     /**
      * Creates a request and depending on the case updates also the [requestedPresentation]
@@ -217,41 +231,41 @@ class InitTransactionLive(
      * Otherwise, [requestedPresentation] will remain as is
      */
     private fun createRequest(
-            requestedPresentation: Presentation.Requested,
-            requestJarOption: EmbedOption<RequestId>,
+        requestedPresentation: Presentation.Requested,
+        requestJarOption: EmbedOption<RequestId>,
     ): Pair<Presentation, JwtSecuredAuthorizationRequestTO> =
-            when (requestJarOption) {
-                is EmbedOption.ByValue -> {
-                    val jwt =
-                            signRequestObject(verifierConfig, clock, requestedPresentation)
-                                    .getOrThrow()
-                    val requestObjectRetrieved =
-                            requestedPresentation.retrieveRequestObject(clock).getOrThrow()
-                    requestObjectRetrieved to
-                            JwtSecuredAuthorizationRequestTO(
-                                    requestedPresentation.id.value,
-                                    verifierConfig.verifierId.clientId,
-                                    jwt,
-                                    null,
-                            )
-                }
-                is EmbedOption.ByReference -> {
-                    val requestUri =
-                            requestJarOption
-                                    .buildUrl(requestedPresentation.requestId)
-                                    .toExternalForm()
-                    requestedPresentation to
-                            JwtSecuredAuthorizationRequestTO(
-                                    requestedPresentation.id.value,
-                                    verifierConfig.verifierId.clientId,
-                                    null,
-                                    requestUri,
-                            )
-                }
+        when (requestJarOption) {
+            is EmbedOption.ByValue -> {
+                val jwt =
+                    signRequestObject(verifierConfig, clock, requestedPresentation)
+                        .getOrThrow()
+                val requestObjectRetrieved =
+                    requestedPresentation.retrieveRequestObject(clock).getOrThrow()
+                requestObjectRetrieved to
+                    JwtSecuredAuthorizationRequestTO(
+                        requestedPresentation.id.value,
+                        verifierConfig.verifierId.clientId,
+                        jwt,
+                        null,
+                    )
             }
+            is EmbedOption.ByReference -> {
+                val requestUri =
+                    requestJarOption
+                        .buildUrl(requestedPresentation.requestId)
+                        .toExternalForm()
+                requestedPresentation to
+                    JwtSecuredAuthorizationRequestTO(
+                        requestedPresentation.id.value,
+                        verifierConfig.verifierId.clientId,
+                        null,
+                        requestUri,
+                    )
+            }
+        }
 
     private fun getWalletResponseMethod(
-            initTransactionTO: InitTransactionTO
+        initTransactionTO: InitTransactionTO,
     ): Either<ValidationError, GetWalletResponseMethod> = either {
         initTransactionTO.redirectUriTemplate?.let { template ->
             with(createQueryWalletResponseRedirectUri) {
@@ -259,7 +273,7 @@ class InitTransactionLive(
             }
             GetWalletResponseMethod.Redirect(template)
         }
-                ?: GetWalletResponseMethod.Poll
+            ?: GetWalletResponseMethod.Poll
     }
 
     /**
@@ -267,39 +281,39 @@ class InitTransactionLive(
      * provided, falls back to [VerifierConfig.responseModeOption].
      */
     private fun responseMode(initTransaction: InitTransactionTO): ResponseModeOption =
-            when (initTransaction.responseMode) {
-                ResponseModeTO.DirectPost -> ResponseModeOption.DirectPost
-                ResponseModeTO.DirectPostJwt -> ResponseModeOption.DirectPostJwt
-                null -> verifierConfig.responseModeOption
-            }
+        when (initTransaction.responseMode) {
+            ResponseModeTO.DirectPost -> ResponseModeOption.DirectPost
+            ResponseModeTO.DirectPostJwt -> ResponseModeOption.DirectPostJwt
+            null -> verifierConfig.responseModeOption
+        }
 
     /**
      * Gets the JAR [EmbedOption] for the provided [InitTransactionTO]. If none has been provided,
      * falls back to [VerifierConfig.requestJarOption].
      */
     private fun jarMode(initTransaction: InitTransactionTO): EmbedOption<RequestId> =
-            when (initTransaction.jarMode) {
-                EmbedModeTO.ByValue -> EmbedOption.ByValue
-                EmbedModeTO.ByReference -> requestJarByReference
-                null -> verifierConfig.requestJarOption
-            }
+        when (initTransaction.jarMode) {
+            EmbedModeTO.ByValue -> EmbedOption.ByValue
+            EmbedModeTO.ByReference -> requestJarByReference
+            null -> verifierConfig.requestJarOption
+        }
 
     /**
      * Gets the PresentationDefinition [EmbedOption] for the provided [InitTransactionTO]. If none
      * has been provided, falls back to [VerifierConfig.presentationDefinitionEmbedOption].
      */
     private fun presentationDefinitionMode(
-            initTransaction: InitTransactionTO
+        initTransaction: InitTransactionTO,
     ): EmbedOption<RequestId> =
-            when (initTransaction.presentationDefinitionMode) {
-                EmbedModeTO.ByValue -> EmbedOption.ByValue
-                EmbedModeTO.ByReference -> presentationDefinitionByReference
-                null -> verifierConfig.presentationDefinitionEmbedOption
-            }
+        when (initTransaction.presentationDefinitionMode) {
+            EmbedModeTO.ByValue -> EmbedOption.ByValue
+            EmbedModeTO.ByReference -> presentationDefinitionByReference
+            null -> verifierConfig.presentationDefinitionEmbedOption
+        }
 
     private suspend fun logTransactionInitialized(
-            p: Presentation,
-            request: JwtSecuredAuthorizationRequestTO
+        p: Presentation,
+        request: JwtSecuredAuthorizationRequestTO,
     ) {
         val event = PresentationEvent.TransactionInitialized(p.id, p.initiatedAt, request)
         publishPresentationEvent(event)
@@ -307,45 +321,45 @@ class InitTransactionLive(
 }
 
 internal fun InitTransactionTO.toDomain(): Either<ValidationError, Pair<Nonce, PresentationType>> =
-        either {
-            fun requiredIdTokenType() = idTokenType?.toDomain()?.let { listOf(it) } ?: emptyList()
+    either {
+        fun requiredIdTokenType() = idTokenType?.toDomain()?.let { listOf(it) } ?: emptyList()
 
-            fun requiredPresentationQuery(): PresentationQuery =
-                    when {
-                        presentationDefinition != null && dcqlQuery == null ->
-                                PresentationQuery.ByPresentationDefinition(presentationDefinition)
-                        presentationDefinition == null && dcqlQuery != null ->
-                                PresentationQuery.ByDigitalCredentialsQueryLanguage(dcqlQuery)
-                        presentationDefinition == null && dcqlQuery == null ->
-                                raise(ValidationError.MissingPresentationQuery)
-                        else -> raise(ValidationError.MultiplePresentationQueries)
-                    }
-
-            fun requiredNonce(): Nonce {
-                ensure(!nonce.isNullOrBlank()) { ValidationError.MissingNonce }
-                return Nonce(nonce)
+        fun requiredPresentationQuery(): PresentationQuery =
+            when {
+                presentationDefinition != null && dcqlQuery == null ->
+                    PresentationQuery.ByPresentationDefinition(presentationDefinition)
+                presentationDefinition == null && dcqlQuery != null ->
+                    PresentationQuery.ByDigitalCredentialsQueryLanguage(dcqlQuery)
+                presentationDefinition == null && dcqlQuery == null ->
+                    raise(ValidationError.MissingPresentationQuery)
+                else -> raise(ValidationError.MultiplePresentationQueries)
             }
 
-            val presentationType =
-                    when (type) {
-                        PresentationTypeTO.IdTokenRequest ->
-                                PresentationType.IdTokenRequest(requiredIdTokenType())
-                        PresentationTypeTO.VpTokenRequest ->
-                                PresentationType.VpTokenRequest(requiredPresentationQuery())
-                        PresentationTypeTO.IdAndVpTokenRequest -> {
-                            val idTokenTypes = requiredIdTokenType()
-                            val pq = requiredPresentationQuery()
-                            PresentationType.IdAndVpToken(idTokenTypes, pq)
-                        }
-                    }
-
-            val nonce = requiredNonce()
-
-            nonce to presentationType
+        fun requiredNonce(): Nonce {
+            ensure(!nonce.isNullOrBlank()) { ValidationError.MissingNonce }
+            return Nonce(nonce)
         }
+
+        val presentationType =
+            when (type) {
+                PresentationTypeTO.IdTokenRequest ->
+                    PresentationType.IdTokenRequest(requiredIdTokenType())
+                PresentationTypeTO.VpTokenRequest ->
+                    PresentationType.VpTokenRequest(requiredPresentationQuery())
+                PresentationTypeTO.IdAndVpTokenRequest -> {
+                    val idTokenTypes = requiredIdTokenType()
+                    val pq = requiredPresentationQuery()
+                    PresentationType.IdAndVpToken(idTokenTypes, pq)
+                }
+            }
+
+        val nonce = requiredNonce()
+
+        nonce to presentationType
+    }
 
 private fun IdTokenTypeTO.toDomain(): IdTokenType =
-        when (this) {
-            IdTokenTypeTO.SubjectSigned -> IdTokenType.SubjectSigned
-            IdTokenTypeTO.AttesterSigned -> IdTokenType.AttesterSigned
-        }
+    when (this) {
+        IdTokenTypeTO.SubjectSigned -> IdTokenType.SubjectSigned
+        IdTokenTypeTO.AttesterSigned -> IdTokenType.AttesterSigned
+    }
