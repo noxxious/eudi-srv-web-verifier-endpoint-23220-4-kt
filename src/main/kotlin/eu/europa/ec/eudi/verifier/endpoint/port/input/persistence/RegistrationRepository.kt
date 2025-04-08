@@ -18,13 +18,18 @@ package eu.europa.ec.eudi.verifier.endpoint.port.input.persistence
 import com.google.cloud.firestore.FirestoreOptions
 import eu.europa.ec.eudi.verifier.endpoint.domain.TransactionId
 import eu.europa.ec.eudi.verifier.endpoint.port.input.RegistrationDataTO
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 interface RegistrationRepositoryObject {
+
     fun findByTransactionId(transactionId: TransactionId): Map<String, Any>
+
     fun saveRegistrationData(
         registrationData: RegistrationDataTO,
         transactionId: TransactionId,
     ): Map<String, String?>
+
     fun updateStatus(status: String, transactionId: TransactionId): Map<String, Any>
 }
 
@@ -59,6 +64,7 @@ class RegistrationRepository(
                 "holderDevice" to registrationData.holderDevice,
                 "dataset" to registrationData.dataset,
                 "testScenario" to registrationData.testScenario,
+                "createdAt" to LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
             )
 
         docRef.set(data)
@@ -69,7 +75,10 @@ class RegistrationRepository(
         val db = firestoreOptions.service
         val docRef = db.collection(collectionName).document(transactionId.value)
 
-        val data = mapOf("status" to status)
+        val data = mapOf(
+            "status" to status,
+            "updatedAt" to LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+        )
 
         docRef.update(data).get()
         return findByTransactionId(transactionId)
