@@ -21,39 +21,45 @@ import eu.europa.ec.eudi.verifier.endpoint.port.input.RegistrationDataTO
 
 interface RegistrationRepositoryObject {
     fun findByTransactionId(transactionId: TransactionId): Map<String, Any>
-    fun saveRegistrationData(registrationData: RegistrationDataTO, transactionId: TransactionId): Map<String, String?>
+    fun saveRegistrationData(
+            registrationData: RegistrationDataTO,
+            transactionId: TransactionId
+    ): Map<String, String?>
     fun updateStatus(status: String, transactionId: TransactionId): Map<String, Any>
 }
 
 class RegistrationRepository(
-    private val firestoreOptions: FirestoreOptions,
-    private val collectionName: String,
+        private val firestoreOptions: FirestoreOptions,
+        private val collectionName: String,
 ) : RegistrationRepositoryObject {
 
     override fun findByTransactionId(transactionId: TransactionId): Map<String, Any> {
         val db = firestoreOptions.service
 
         val docRef = db.collection(collectionName).document(transactionId.value)
-        val data = docRef
-            .get()
-            .get()
-            .data ?: error("Transaction $collectionName:$transactionId not found")
+        val data =
+                docRef.get().get().data
+                        ?: error("Transaction $collectionName:$transactionId not found")
 
         return data
     }
 
-    override fun saveRegistrationData(registrationData: RegistrationDataTO, transactionId: TransactionId): Map<String, String?> {
+    override fun saveRegistrationData(
+            registrationData: RegistrationDataTO,
+            transactionId: TransactionId
+    ): Map<String, String?> {
         val db = firestoreOptions.service
         val docRef = db.collection(collectionName).document(transactionId.value)
 
-        val data = mapOf(
-            "readerCountry" to registrationData.readerCountry,
-            "readerCompanyName" to registrationData.readerCompanyName,
-            "holderTesterInitials" to registrationData.holderTesterInitials,
-            "holderDevice" to registrationData.holderDevice,
-            "dataset" to registrationData.dataset,
-            "testScenario" to registrationData.testScenario,
-        )
+        val data =
+                mapOf(
+                        "readerCountry" to registrationData.readerCountry,
+                        "readerCompanyName" to registrationData.readerCompanyName,
+                        "holderTesterInitials" to registrationData.holderTesterInitials,
+                        "holderDevice" to registrationData.holderDevice,
+                        "dataset" to registrationData.dataset,
+                        "testScenario" to registrationData.testScenario,
+                )
 
         docRef.set(data)
         return data
@@ -66,6 +72,25 @@ class RegistrationRepository(
         val data = mapOf("status" to status)
 
         docRef.update(data)
-        return docRef.get().get().data ?: error("Transaction $collectionName:$transactionId not found")
+        return docRef.get().get().data
+                ?: error("Transaction $collectionName:$transactionId not found")
+    }
+}
+
+class RegistrationInMemoryRepo() : RegistrationRepositoryObject {
+
+    override fun findByTransactionId(transactionId: TransactionId): Map<String, Any> {
+        return mapOf("1" to {})
+    }
+
+    override fun saveRegistrationData(
+            registrationData: RegistrationDataTO,
+            transactionId: TransactionId
+    ): Map<String, String?> {
+        return mapOf("1" to "")
+    }
+
+    override fun updateStatus(status: String, transactionId: TransactionId): Map<String, Any> {
+        return mapOf("1" to "")
     }
 }
