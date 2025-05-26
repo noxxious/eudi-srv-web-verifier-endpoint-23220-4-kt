@@ -19,9 +19,9 @@ import arrow.core.NonEmptyList
 import arrow.core.recover
 import arrow.core.some
 import arrow.core.toNonEmptyListOrNull
-import com.google.gson.Gson
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.cloud.firestore.FirestoreOptions
+import com.google.gson.Gson
 import com.nimbusds.jose.EncryptionMethod
 import com.nimbusds.jose.JWEAlgorithm
 import com.nimbusds.jose.JWSAlgorithm
@@ -42,9 +42,9 @@ import eu.europa.ec.eudi.verifier.endpoint.adapter.out.jose.VerifyJarmEncryptedJ
 import eu.europa.ec.eudi.verifier.endpoint.adapter.out.persistence.PresentationInMemoryRepo
 import eu.europa.ec.eudi.verifier.endpoint.domain.*
 import eu.europa.ec.eudi.verifier.endpoint.port.input.*
+import eu.europa.ec.eudi.verifier.endpoint.port.input.persistence.RegistrationRepository
 import eu.europa.ec.eudi.verifier.endpoint.port.input.statuslist.GetStatusListAggregationObjectLive
 import eu.europa.ec.eudi.verifier.endpoint.port.input.statuslist.GetStatusListObjectLive
-import eu.europa.ec.eudi.verifier.endpoint.port.input.persistence.RegistrationRepository
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.CreateQueryWalletResponseRedirectUri
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.GenerateResponseCode
 import eu.europa.ec.eudi.verifier.endpoint.port.out.web.GetStatusListAggregationClient
