@@ -1363,6 +1363,7 @@
                   }
                 },
                 "constraints": {
+                  "limit_disclosure": "required",
                   "fields": [
                     {
                       "path": [
@@ -1437,6 +1438,7 @@
                   }
                 },
                 "constraints": {
+                  "limit_disclosure": "required",
                   "fields": [
                     {
                       "path": [
@@ -1511,6 +1513,7 @@
                   }
                 },
                 "constraints": {
+                  "limit_disclosure": "required",
                   "fields": [
                     {
                       "path": [
@@ -1588,6 +1591,7 @@
                   }
                 },
                 "constraints": {
+                  "limit_disclosure": "required",
                   "fields": [
                     {
                       "path": [
@@ -1664,6 +1668,7 @@
                   }
                 },
                 "constraints": {
+                  "limit_disclosure": "required",
                   "fields": [
                     {
                       "path": [
@@ -1740,6 +1745,7 @@
                   }
                 },
                 "constraints": {
+                  "limit_disclosure": "required",
                   "fields": [
                     {
                       "path": [

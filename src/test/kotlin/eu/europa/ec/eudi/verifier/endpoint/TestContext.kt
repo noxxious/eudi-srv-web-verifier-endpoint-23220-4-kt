@@ -28,6 +28,7 @@ import eu.europa.ec.eudi.verifier.endpoint.domain.*
 import eu.europa.ec.eudi.verifier.endpoint.domain.EmbedOption.ByValue
 import eu.europa.ec.eudi.verifier.endpoint.port.input.InitTransaction
 import eu.europa.ec.eudi.verifier.endpoint.port.input.InitTransactionLive
+import eu.europa.ec.eudi.verifier.endpoint.port.input.persistence.RegistrationInMemoryRepo
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.CreateQueryWalletResponseRedirectUri
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.GenerateRequestId
 import eu.europa.ec.eudi.verifier.endpoint.port.out.cfg.GenerateTransactionId
@@ -54,20 +55,25 @@ object TestContext {
     private val generateRequestId = GenerateRequestId.fixed(testRequestId)
     private val rsaJwk = run {
         ClassPathResource("test-cert.jks").inputStream.use {
-            val keystore = KeyStore.getInstance("JKS").apply {
-                load(it, "".toCharArray())
-            }
+            val keystore = KeyStore.getInstance("JKS").apply { load(it, "".toCharArray()) }
             RSAKey.load(keystore, "client-id", "".toCharArray())
         }
     }
-    val clientMetaData = ClientMetaData(
-        jwkOption = ByValue,
-        idTokenSignedResponseAlg = JWSAlgorithm.RS256.name,
-        idTokenEncryptedResponseAlg = JWEAlgorithm.RSA_OAEP_256.name,
-        idTokenEncryptedResponseEnc = EncryptionMethod.A128CBC_HS256.name,
-        subjectSyntaxTypesSupported = listOf("urn:ietf:params:oauth:jwk-thumbprint", "did:example", "did:key"),
-        jarmOption = ParseJarmOptionNimbus(null, JWEAlgorithm.ECDH_ES.name, "A256GCM")!!,
-    )
+    val clientMetaData =
+        ClientMetaData(
+            jwkOption = ByValue,
+            idTokenSignedResponseAlg = JWSAlgorithm.RS256.name,
+            idTokenEncryptedResponseAlg = JWEAlgorithm.RSA_OAEP_256.name,
+            idTokenEncryptedResponseEnc = EncryptionMethod.A128CBC_HS256.name,
+            subjectSyntaxTypesSupported =
+                listOf(
+                    "urn:ietf:params:oauth:jwk-thumbprint",
+                    "did:example",
+                    "did:key",
+                ),
+            jarmOption =
+                ParseJarmOptionNimbus(null, JWEAlgorithm.ECDH_ES.name, "A256GCM")!!,
+        )
     private val jarSigningConfig: SigningConfig = SigningConfig(rsaJwk, JWSAlgorithm.RS256)
     val verifierId = VerifierId.X509SanDns("client-id", jarSigningConfig)
     val singRequestObject: SignRequestObjectNimbus = SignRequestObjectNimbus()
@@ -76,7 +82,7 @@ object TestContext {
     val loadPresentationById = repo.loadPresentationById
     private val storePresentation = repo.storePresentation
     private val generateEphemeralKey = GenerateEphemeralEncryptionKeyPairNimbus
-
+    private val registrationRepository = RegistrationInMemoryRepo()
     fun initTransaction(
         verifierConfig: VerifierConfig,
         requestJarByReference: EmbedOption.ByReference<RequestId>,
@@ -94,12 +100,11 @@ object TestContext {
             presentationDefinitionByReference,
             CreateQueryWalletResponseRedirectUri.Simple,
             repo.publishPresentationEvent,
+            registrationRepository,
         )
 }
 
-/**
- * Meta annotation to be used with integration tests of the application
- */
+/** Meta annotation to be used with integration tests of the application */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 @SpringBootTest(
@@ -110,18 +115,15 @@ object TestContext {
 internal annotation class VerifierApplicationTest(
 
     /**
-     * [Configuration] classes that contain extra bean definitions.
-     * Useful for bean overriding using [Primary] annotation.
+     * [Configuration] classes that contain extra bean definitions. Useful for bean overriding
+     * using [Primary] annotation.
      */
-    @get:AliasFor(annotation = ContextConfiguration::class)
-    val classes: Array<KClass<*>> = [],
-
+    @get:AliasFor(annotation = ContextConfiguration::class) val classes: Array<KClass<*>> = [],
 )
 
-/**
- * [ApplicationContextInitializer] for use with [SpringBootTest]/[ContextConfiguration]
- */
-internal class BeansDslApplicationContextInitializer : ApplicationContextInitializer<GenericApplicationContext> {
+/** [ApplicationContextInitializer] for use with [SpringBootTest]/[ContextConfiguration] */
+internal class BeansDslApplicationContextInitializer :
+    ApplicationContextInitializer<GenericApplicationContext> {
     override fun initialize(applicationContext: GenericApplicationContext) {
         beans(Clock.systemDefaultZone()).initializer().initialize(applicationContext)
     }

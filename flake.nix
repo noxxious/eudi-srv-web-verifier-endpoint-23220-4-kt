@@ -27,9 +27,6 @@
         ];
       };
     in {
-      # Configure your development environment.
-      #
-      # Documentation: https://github.com/numtide/devshell
       devShell = pkgs.devshell.mkShell {
         name = "eudi-srv-web-verifier-endpoint-23220-4-kt";
         motd = ''
@@ -42,6 +39,8 @@
           }
         ];
         packages = with pkgs; [
+          kotlin
+          kotlin-language-server
           gradle
           jdk
         ];

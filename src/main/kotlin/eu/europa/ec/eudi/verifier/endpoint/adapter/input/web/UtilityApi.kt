@@ -16,20 +16,35 @@
 package eu.europa.ec.eudi.verifier.endpoint.adapter.input.web
 
 import eu.europa.ec.eudi.verifier.endpoint.domain.Nonce
+import eu.europa.ec.eudi.verifier.endpoint.domain.TransactionId
 import eu.europa.ec.eudi.verifier.endpoint.port.input.DeviceResponseValidationResult
 import eu.europa.ec.eudi.verifier.endpoint.port.input.SdJwtVcValidationResult
 import eu.europa.ec.eudi.verifier.endpoint.port.input.ValidateMsoMdocDeviceResponse
 import eu.europa.ec.eudi.verifier.endpoint.port.input.ValidateSdJwtVc
+import eu.europa.ec.eudi.verifier.endpoint.port.input.persistence.RegistrationRepository
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.web.reactive.function.server.*
 import org.springframework.web.reactive.function.server.ServerResponse.badRequest
 import org.springframework.web.reactive.function.server.ServerResponse.ok
 
+@Serializable
+data class RegistrationDataStatusTO(
+    @SerialName("status") val status: String,
+)
+
 internal class UtilityApi(
     private val validateMsoMdocDeviceResponse: ValidateMsoMdocDeviceResponse,
     private val validateSdJwtVc: ValidateSdJwtVc,
+    private val registrationRepository: RegistrationRepository,
 ) {
+
+    private val logger: Logger = LoggerFactory.getLogger(UtilityApi::class.java)
+
     val route: RouterFunction<ServerResponse> = coRouter {
         POST(
             VALIDATE_MSO_MDOC_DEVICE_RESPONSE_PATH,
@@ -41,6 +56,12 @@ internal class UtilityApi(
             VALIDATE_SD_JWT_VC_PATH,
             contentType(APPLICATION_FORM_URLENCODED) and accept(APPLICATION_JSON),
             ::handleValidateSdJwtVc,
+        )
+
+        POST(
+            UPDATE_REGISTRATION_DATA_STATUS,
+            contentType(APPLICATION_JSON) and accept(APPLICATION_JSON),
+            ::handleRegistrationDataStatus,
         )
     }
 
@@ -87,8 +108,21 @@ internal class UtilityApi(
         }
     }
 
+    private suspend fun handleRegistrationDataStatus(req: ServerRequest): ServerResponse {
+        suspend fun done(map: Map<String, Any>) = ok().json().bodyValueAndAwait(map)
+
+        val transactionId = req.transactionId()
+        val input = req.awaitBody<RegistrationDataStatusTO>()
+
+        logger.info("Handling RegistrationData status update for tx ${transactionId.value} to status: ${input.status}. ...")
+        return done(registrationRepository.updateStatus(input.status, transactionId))
+    }
+
     companion object {
         const val VALIDATE_MSO_MDOC_DEVICE_RESPONSE_PATH = "/utilities/validations/msoMdoc/deviceResponse"
         const val VALIDATE_SD_JWT_VC_PATH = "/utilities/validations/sdJwtVc"
+        const val UPDATE_REGISTRATION_DATA_STATUS = "/utilities/registration-data/status/{transactionId}"
+
+        private fun ServerRequest.transactionId() = TransactionId(pathVariable("transactionId"))
     }
 }
