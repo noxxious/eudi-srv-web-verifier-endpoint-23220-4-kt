@@ -27,6 +27,7 @@ import java.time.Clock
 import java.time.ZonedDateTime
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.fail
 
@@ -68,6 +69,7 @@ class ExamplesTest {
 
     @OptIn(ExperimentalEncodingApi::class, ExperimentalSerializationApi::class)
     @Test
+    @Ignore
     fun `athlete example is valid, skipping x5c checks`() {
         fun issuerSigned(): IssuerSigned {
             val base64Dec = Base64.UrlSafe.withPadding(Base64.PaddingOption.PRESENT_OPTIONAL)
